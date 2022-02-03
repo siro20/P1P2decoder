@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- Bootstrap CSS -->
+	<link href="/assets/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" >
+	<script src="/assets/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+	<script src="/assets/js/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+	<script src="/assets/js/gauge.min.js" crossorigin="anonymous"></script>
+
+	<script type='text/javascript'>
+	var getGuageInterval = function(minrange, maxrange) {
+			var arr = [];
+			for (let i = Math.floor(minrange/10); i < Math.ceil((maxrange + 5)/10); i++) {
+				arr.push((i*10).toString());
+			};
+			return arr;
+		};
+	var getGuageColor = function(minrange, maxrange) {
+			var mid = (minrange + maxrange)/2;
+			var col = [];
+			col.push({"from": minrange, "to": mid + 10, "color": "rgba(0, 0, 255, .3)"});
+			col.push({"from": mid - 10, "to": maxrange , "color": "rgba(255, 0, 0, .3)"});
+			return col;
+		};
+	$(document).ready(function() {
+		setInterval(function() {
+		{{ range .temperatures }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/temperatures/{{.N}}"
+			}).then(function(data) {
+				$('.temp-{{.N}}').html(data.value);
+				$('canvas[id="{{.N}}"]').attr('data-value', data.value);
+			});
+		
+		{{ end }}
+		{{ range .valves }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/valves/{{.N}}"
+			}).then(function(data) {
+				$('.valve-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		{{ range .pumps }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/pumps/{{.N}}"
+			}).then(function(data) {
+				$('.pump-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		{{ range .status }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/status/{{.N}}"
+			}).then(function(data) {
+				$('.status-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		}, 1000);
+
+{{ range .temperatures }}
+
+var radial = new RadialGauge({
+    renderTo: '{{.N}}',
+    width: 300,
+    height: 300,
+    units :"{{ .U }}",
+    title: "{{ .N }}",
+    value: {{ .V }},
+    minValue: {{.RangeMin}},
+    maxValue: {{.RangeMax}},
+    majorTicks: getGuageInterval({{.RangeMin}}, {{.RangeMax}}),
+    minorTicks: 2,
+    strokeTicks: false,
+    highlights: getGuageColor({{.RangeMin}}, {{.RangeMax}}),
+    colorPlate: '#222',
+    colorMajorTicks: '#f5f5f5',
+    colorMinorTicks: '#ddd',
+    colorTitle: '#fff',
+    colorUnits: '#ccc',
+    colorNumbers: '#eee',
+    colorNeedle: 'rgba(200, 128, 128, 1)',
+    colorNeedleEnd: 'rgba(255, 160, 122, .9)',
+    valueBox: true,
+    animationRule: 'bounce',
+    animationDuration: 500
+});
+radial.draw();
+{{ end }}
+
+	});
+
+	</script>
+	<title>{{ .title }}</title>
+	</head>
+	<body>
+		<h1 class="text-center">
+			{{ .title }}
+		</h1>
+		<div class="d-flex flex-wrap align-content-around bd-highlight" style="padding: 20px">
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Measured temperatures:</small></h2>
+				{{ range .temperatures }}
+				{{ if not .SetPoint }}
+					<canvas id='{{.N}}'></canvas>
+				{{ end }}
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Set point temperatures:</small></h2>
+				{{ range .temperatures }}
+				{{ if .SetPoint }}
+					<canvas id='{{.N}}'></canvas>
+				{{ end }}
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Temperatures:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Unit:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .temperatures }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="temp-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .U }}</td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Pumps:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .pumps }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="pump-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Valves:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .valves }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="valve-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Status:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .status }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="status-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+		</div>
+	</body>
+</html>
