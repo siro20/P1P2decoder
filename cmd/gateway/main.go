@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/siro20/p1p2decoder/pkg/p1p2"
@@ -105,7 +106,9 @@ func main() {
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			fmt.Print(err)
+			if err != syscall.EINTR {
+				fmt.Print(err)
+			}
 		}
 		closer.Close()
 		if dumpFile != nil && *dumpFile != "" {
