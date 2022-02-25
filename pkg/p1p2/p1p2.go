@@ -129,6 +129,51 @@ func Packet11RespRegisterCallback(f func(p Packet11Resp)) {
 	packet11RespCB = append(packet11RespCB, f)
 }
 
+type Packet12Req struct {
+	NewHourIndicator uint8
+	DayOfWeek        uint8
+	TimeHours        uint8
+	TimeMinutes      uint8
+	DateYear         uint8
+	DateMonth        uint8
+	DateDayOfMonth   uint8
+	Reserved         [5]uint8
+	Flags            uint8
+	Flags2           uint8
+	Reserved2        uint8
+}
+
+func (p Packet12Req) Crc() bool {
+	return true
+}
+
+var packet12ReqCB []func(p Packet12Req) = []func(p Packet12Req){}
+
+func Packet12ReqRegisterCallback(f func(p Packet12Req)) {
+	packet12ReqCB = append(packet12ReqCB, f)
+}
+
+type Packet13Resp struct {
+	DHWTankTargetTemperature f8p8     // From Boiler?
+	Flags                    [2]uint8 // Unknown
+	Reserved                 [2]uint8
+	Flags2                   uint8 // Lower bits change per second. Flow in L/min?
+	Reserved2                [3]uint8
+	ControlSoftwareVersion   uint16
+	HeatPumpSoftwareVersion  uint16
+	Reserved3                [2]uint8
+}
+
+func (p Packet13Resp) Crc() bool {
+	return true
+}
+
+var packet13RespCB []func(p Packet13Resp) = []func(p Packet13Resp){}
+
+func Packet13RespRegisterCallback(f func(p Packet13Resp)) {
+	packet13RespCB = append(packet13RespCB, f)
+}
+
 type Packet14Req struct {
 	Reserved  [8]uint8
 	DeltaT    sabs4
@@ -226,6 +271,13 @@ func decode(b []byte) (pkt interface{}, err error) {
 					return
 				}
 				pkt = p11r
+			} else if hdr.Type == 0x13 {
+				var p13r Packet13Resp
+				if err = binary.Read(r, binary.BigEndian, &p13r); err != nil {
+					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+					return
+				}
+				pkt = p13r
 			} else if hdr.Type == 0x14 {
 				var p14r Packet14Resp
 				if err = binary.Read(r, binary.BigEndian, &p14r); err != nil {
@@ -258,6 +310,13 @@ func decode(b []byte) (pkt interface{}, err error) {
 					return
 				}
 				pkt = p11r
+			} else if hdr.Type == 0x12 {
+				var p12r Packet12Req
+				if err = binary.Read(r, binary.BigEndian, &p12r); err != nil {
+					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+					return
+				}
+				pkt = p12r
 			} else if hdr.Type == 0x14 {
 				var p14r Packet14Req
 				if err = binary.Read(r, binary.BigEndian, &p14r); err != nil {
@@ -288,7 +347,7 @@ func decode(b []byte) (pkt interface{}, err error) {
 			return
 		}
 		if b != crc {
-			err = fmt.Errorf("CRC of packet doesn't match")
+			err = fmt.Errorf("CRC of packet doesn't match: %02x != %02x", b, crc)
 			return
 		}
 	}
@@ -310,6 +369,14 @@ func callbacks(pkt interface{}) {
 		}
 	} else if p, ok := pkt.(Packet11Resp); ok {
 		for _, cb := range packet11RespCB {
+			cb(p)
+		}
+	} else if p, ok := pkt.(Packet12Req); ok {
+		for _, cb := range packet12ReqCB {
+			cb(p)
+		}
+	} else if p, ok := pkt.(Packet13Resp); ok {
+		for _, cb := range packet13RespCB {
 			cb(p)
 		}
 	} else if p, ok := pkt.(Packet14Resp); ok {
