@@ -44,7 +44,6 @@ func (t *Temperature) LastUpdated() time.Time {
 }
 
 func (t *Temperature) SetValue(newVal float32) {
-	oldValue := t.V
 	t.V = newVal
 	t.Ts = time.Now()
 
@@ -55,18 +54,6 @@ func (t *Temperature) SetValue(newVal float32) {
 			cb(newVal)
 		}
 	}
-
-	cached, ok := temperatureCache[t.id]
-	if (ok && cached != newVal) || !ok {
-		// Notify change event listeners
-		cbs, ok := temperatureChangedCB[t.id]
-		if ok {
-			for _, cb := range cbs {
-				cb(newVal, oldValue)
-			}
-		}
-	}
-	temperatureCache[t.id] = newVal
 }
 
 func (t *Temperature) Decode(pkt interface{}) {
@@ -76,10 +63,13 @@ func (t *Temperature) Decode(pkt interface{}) {
 	}
 }
 
+var cacheCnt int
 var temperatureCB map[sensorID][]func(p float32) = map[sensorID][]func(p float32){}
-var temperatureChangedCB map[sensorID][]func(newVal float32, oldVal float32) = map[sensorID][]func(newVal float32, oldVal float32){}
+var temperatureCache map[int]float32 = map[int]float32{}
 
-var temperatureCache map[sensorID]float32 = map[sensorID]float32{}
+func hashFromSensorHysteresis(t Temperature, hysteresis float32) string {
+	return fmt.Sprintf("%d%f", t.id, hysteresis)
+}
 
 // TemperatureRegisterCallback registers a data update callback
 func TemperatureRegisterCallback(t Temperature, f func(t float32)) {
@@ -88,7 +78,32 @@ func TemperatureRegisterCallback(t Temperature, f func(t float32)) {
 
 // TemperatureRegisterChangeCallback registers a data change callback
 func TemperatureRegisterChangeCallback(t Temperature, f func(newVal float32, oldVal float32)) {
-	temperatureChangedCB[t.id] = append(temperatureChangedCB[t.id], f)
+	TemperatureRegisterChangeCallbackWithHysteresis(t, 0, func(t Temperature, hysteresis float32, newVal float32, oldVal float32) {
+		f(newVal, oldVal)
+	})
+}
+
+// TemperatureRegisterChangeCallback registers a data change callback
+func TemperatureRegisterChangeCallbackWithHysteresis(t Temperature, hysteresis float32, f func(t Temperature, hysteresis float32, newVal float32, oldVal float32)) {
+	id := cacheCnt
+	cacheCnt++
+
+	temperatureCache[id] = 0.0
+	temperatureCB[t.id] = append(temperatureCB[t.id], func(newVal float32) {
+		oldVal := temperatureCache[id]
+		if hysteresis > 0 {
+			if oldVal+hysteresis <= newVal || oldVal-hysteresis >= newVal {
+				f(t, hysteresis, newVal, oldVal)
+				temperatureCache[id] = newVal
+			}
+		} else {
+			if oldVal != newVal {
+				f(t, hysteresis, newVal, oldVal)
+				temperatureCache[id] = newVal
+			}
+		}
+
+	})
 }
 
 func newTemperature(name string,
