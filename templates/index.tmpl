@@ -90,45 +90,6 @@
 	radial.draw();
 	{{ end }}
 
-	{{ range .temperatures }}
-	var chart = new Chart(
-		document.getElementById('{{.N}}-chart'),
-		{
-			type: 'line',
-			data: {
-				labels: [],
-				datasets: [{
-				label: '{{.N}}',
-				backgroundColor: 'rgb(255, 99, 132)',
-				borderColor: 'rgb(255, 99, 132)',
-				data: [],
-				}]
-			},
-			options: {}
-		}
-	);
-
-	var update = function() {
-		$.ajax({
-			url: window.location.origin + "/api/v1/temperatures/charts/{{.N}}"
-		}).then(function(data) {
-			for (let i in data) {
-				{{.N}}-chart.data.labels.pop();
-				{{.N}}-chart.data.labels.push(i.created_at);
-				{{.N}}-chart.data.datasets.pop();
-				{{.N}}-chart.data.datasets.forEach((dataset) => {
-					dataset.data.push(i.temperature);
-				});
-			}
-
-			{{.N}}-chart.update();
-		});
-	};
-
-	setInterval(update, 1000);
-	update();
-	{{ end }}
-
 	});
 
 	</script>
@@ -226,12 +187,6 @@
 					</tr>
 				{{ end }}
 				</table>
-			</div>
-			<div class="rounded-3 border border-3" style="padding: 20px">
-				<h2><small>Graphs:</small></h2>
-				{{ range .temperatures }}
-					<canvas id="{{.N}}-chart"></canvas><br>
-				{{ end }}
 			</div>
 		</div>
 	</body>

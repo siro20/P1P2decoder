@@ -1,15 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/siro20/p1p2decoder/pkg/p1p2"
 )
 
-func runHtml(prefix string, db *p1p2.DB, sys p1p2.System) {
+func runHtml(prefix string, sys p1p2.System) {
 	router := gin.Default()
 	router.LoadHTMLGlob(prefix + "/templates/*.tmpl")
 	router.Static("/assets", prefix+"/assets")
@@ -48,20 +46,6 @@ func runHtml(prefix string, db *p1p2.DB, sys p1p2.System) {
 			}
 		}
 	})
-	if db != nil {
-		rest.GET("/temperatures/charts/:name", func(c *gin.Context) {
-			for i := range sys.Temperatures {
-				if sys.Temperatures[i].Name() == c.Params.ByName("name") {
-					entries, err := db.GetTemperatures(*sys.Temperatures[i], time.Now().Add(-time.Hour*24))
-					if err != nil {
-						c.AbortWithError(http.StatusNotFound, fmt.Errorf("Unknown name"))
-					}
-					c.IndentedJSON(http.StatusOK, entries)
-				}
-			}
-		})
-
-	}
 
 	rest.GET("/valves/:name", func(c *gin.Context) {
 		for i := range sys.Valves {
