@@ -17,13 +17,16 @@ import (
 )
 
 var (
-	verbose  = kingpin.Flag("verbose", "Verbose mode.").Short('v').Bool()
-	ttyDev   = kingpin.Flag("chardev", "Path to tty device to read data from").Short('c').String()
-	dumpFile = kingpin.Flag("dump", "Path to regular file to read data from").Short('d').String()
-	baudrate = kingpin.Flag("baud", "Serial baud rate").Short('b').Int()
-	parity   = kingpin.Flag("parity", "Serial parity: none/even/odd").Default("none").Short('p').String()
-	stopbits = kingpin.Flag("stop", "Serial stop bits: 1/2").Short('s').Int()
-	database = kingpin.Flag("db", "Path to database for non-volatile storage").Short('e').String()
+	verbose          = kingpin.Flag("verbose", "Verbose mode.").Short('v').Bool()
+	ttyDev           = kingpin.Flag("chardev", "Path to tty device to read data from").Short('c').String()
+	dumpFile         = kingpin.Flag("dump", "Path to regular file to read data from").Short('d').String()
+	baudrate         = kingpin.Flag("baud", "Serial baud rate").Short('b').Int()
+	parity           = kingpin.Flag("parity", "Serial parity: none/even/odd").Default("none").Short('p').String()
+	stopbits         = kingpin.Flag("stop", "Serial stop bits: 1/2").Short('s').Int()
+	database         = kingpin.Flag("db", "Path to database for non-volatile storage").Short('e').String()
+	htmlServer       = kingpin.Flag("html", "Run HTTP server").Bool()
+	prometheusServer = kingpin.Flag("prometheus", "Run prometheus server").Bool()
+	prometheusAddr   = kingpin.Flag("prometheus-listen-address", "The address to listen on for prometheus requests.").String()
 )
 
 func main() {
@@ -62,7 +65,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	go runHtml(db, p1p2.Sys)
+	if *htmlServer {
+		go runHtml(db, p1p2.Sys)
+	}
+	if *prometheusServer {
+		go runPrometheusServer(p1p2.Sys)
+	}
 
 	for {
 		var scanner *bufio.Scanner
