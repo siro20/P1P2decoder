@@ -1,0 +1,125 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+builds:
+
+  - main: ./cmd/gateway
+    id: "p1p2gateway"
+    binary: "p1p2gateway"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch: 
+      - amd64
+      - arm
+      - arm64
+    goarm: 
+      - "7"
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }} -X main.builtBy=goreleaser
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  use: git
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
+  groups:
+    - title: 'New Features'
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 10
+    - title: Other work
+      order: 999
+        
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    replacements:
+      linux: Linux
+      amd64: x86_64
+      arm: armhf
+      arm64: arm64 
+    files:
+      - Readme.md
+      - LICENSE
+
+nfpms:
+  - 
+    id: packages
+    file_name_template: ' {{ .ConventionalFileName }}'
+    package_name: "golang-github-p1p2gateway"
+    builds:
+      - p1p2gateway
+    maintainer: "Patrick Rudolph <patrick.rudolph@rub.de>"
+    description: |
+      This Golang utility allows to abstract operation usually used when
+      developing low level firmware. It allows to flash, power cycle and
+      get debug output from a DUT.
+    
+    vendor: "siro20"
+    homepage: "https://github.com/siro20/P1P2decoder"
+    license: "MIT"
+
+    recommends:
+      - prometheus
+
+    formats: 
+      - deb
+      - rpm
+
+    replaces: 
+      - golang-github-p1p2gateway
+      - golang-p1p2gateway
+
+    bindir: /usr/bin
+    
+    section: default
+    priority: extra
+    
+    contents:
+      - src: ./init/p1p2gateway@.service
+        dst: /usr/lib/systemd/system/p1p2gateway@.service
+      - src: ./init/prometheus/p1p2node.yml
+        dst: /etc/prometheus/targets.d/p1p2node.yml 
+      - src: ./assets
+        dst: /usr/share/p1p2gateway/assets
+      - src: ./templates
+        dst: /usr/share/p1p2gateway/templates
+
+          #
+    # Scripts to run at specific stages. (overridable)
+    scripts:
+      preinstall: ./scripts/stop_service.sh
+      preremove: ./scripts/stop_service.sh
+      postinstall: ./scripts/start_service.sh
+
+    overrides:
+      rpm: 
+        replacements:
+          amd64: x86_64
+          file_name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Arch }}"
+
+source: 
+  enabled: true

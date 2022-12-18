@@ -1,0 +1,11 @@
+[Unit]
+Description=P1P2 gateway running on device /dev/%i 
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Environment="GIN_MODE=release"
+ExecStart=/usr/bin/p1p2gateway -c /dev/%i --prometheus --html --html-assets-path=/usr/share/p1p2gateway
+
+[Install]
+WantedBy=multi-user.target
