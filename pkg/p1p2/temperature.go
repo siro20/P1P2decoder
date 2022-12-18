@@ -43,29 +43,30 @@ func (t *Temperature) LastUpdated() time.Time {
 	return t.Ts
 }
 
-func (t *Temperature) SetValue(v float32) {
-	t.V = v
+func (t *Temperature) SetValue(newVal float32) {
+	oldValue := t.V
+	t.V = newVal
 	t.Ts = time.Now()
 
 	// Notify event listeners
 	cbs, ok := temperatureCB[t.id]
 	if ok {
 		for _, cb := range cbs {
-			cb(v)
+			cb(newVal)
 		}
 	}
 
 	cached, ok := temperatureCache[t.id]
-	if (ok && cached != v) || !ok {
+	if (ok && cached != newVal) || !ok {
 		// Notify change event listeners
-		cbs, ok = temperatureChangedCB[t.id]
+		cbs, ok := temperatureChangedCB[t.id]
 		if ok {
 			for _, cb := range cbs {
-				cb(v)
+				cb(newVal, oldValue)
 			}
 		}
 	}
-	temperatureCache[t.id] = v
+	temperatureCache[t.id] = newVal
 }
 
 func (t *Temperature) Decode(pkt interface{}) {
@@ -76,7 +77,7 @@ func (t *Temperature) Decode(pkt interface{}) {
 }
 
 var temperatureCB map[sensorID][]func(p float32) = map[sensorID][]func(p float32){}
-var temperatureChangedCB map[sensorID][]func(p float32) = map[sensorID][]func(p float32){}
+var temperatureChangedCB map[sensorID][]func(newVal float32, oldVal float32) = map[sensorID][]func(newVal float32, oldVal float32){}
 
 var temperatureCache map[sensorID]float32 = map[sensorID]float32{}
 
@@ -86,7 +87,7 @@ func TemperatureRegisterCallback(t Temperature, f func(t float32)) {
 }
 
 // TemperatureRegisterChangeCallback registers a data change callback
-func TemperatureRegisterChangeCallback(t Temperature, f func(t float32)) {
+func TemperatureRegisterChangeCallback(t Temperature, f func(newVal float32, oldVal float32)) {
 	temperatureChangedCB[t.id] = append(temperatureChangedCB[t.id], f)
 }
 

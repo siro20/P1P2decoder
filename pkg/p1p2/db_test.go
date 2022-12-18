@@ -18,12 +18,14 @@ func Test_DB_GetTempeature(t *testing.T) {
 		t.Errorf("Opening the DB failed with: %v", err)
 		return
 	}
-	_, err = db.GetTemperature(TempLeavingWater)
-	if err == nil {
-		t.Errorf("Expected to receive an error")
-	}
-	TempLeavingWater.SetValue(1.0)
 	dbEntry, err := db.GetTemperature(TempLeavingWater)
+	if err == nil {
+		t.Errorf("Expected to receive an error. Entry was %v", dbEntry)
+	}
+	TempLeavingWater.SetValue(0.0)
+	time.Sleep(time.Second)
+	TempLeavingWater.SetValue(1.0)
+	dbEntry, err = db.GetTemperature(TempLeavingWater)
 	if err != nil {
 		t.Errorf("Failed reading a DB entry: %v", err)
 		return
@@ -54,7 +56,8 @@ func Test_DB_GetState(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected to receive an error")
 	}
-
+	ValveCooling.SetValue(false)
+	time.Sleep(time.Second)
 	ValveCooling.SetValue(true)
 	dbEntry, err := db.GetState(ValveCooling)
 	if err != nil {
@@ -141,12 +144,13 @@ func Test_DB_GetStates(t *testing.T) {
 		t.Errorf("Failed reading a DB entry: %v", err)
 		return
 	}
-	if len(dbEntries) != 3 {
+	if len(dbEntries) != 6 {
 		t.Errorf("Got wrong number of entries: %d", len(dbEntries))
 		return
 	}
+	expectedStates := []bool{false, true, true, false, false, true}
 	for i := range dbEntries {
-		if dbEntries[i].State != (i != 1) {
+		if dbEntries[i].State != expectedStates[i] {
 			t.Errorf("Entry %d has wrong value: %v", i, dbEntries[i].State)
 		}
 		if dbEntries[i].Sensor != ValveCooling.id {
@@ -155,5 +159,95 @@ func Test_DB_GetStates(t *testing.T) {
 		if time.Since(dbEntries[i].CreatedAt).Seconds() > 60 {
 			t.Errorf("Entry %d has wrong CreatedAt: %v", i, dbEntries[i].CreatedAt)
 		}
+	}
+}
+
+func Test_DB_CleanStates(t *testing.T) {
+	file, err := ioutil.TempFile("/tmp", "go-test")
+	if err != nil {
+		t.SkipNow()
+	}
+	defer os.Remove(file.Name())
+	db, err := OpenDB(file.Name())
+	if err != nil {
+		t.Errorf("Opening the DB failed with: %v", err)
+		return
+	}
+
+	ValveCooling.SetValue(true)
+	time.Sleep(time.Millisecond)
+	ValveCooling.SetValue(false)
+	time.Sleep(time.Millisecond)
+	ValveCooling.SetValue(true)
+	time.Sleep(time.Second)
+	ValveCooling.SetValue(false)
+
+	dbEntries, err := db.GetStates(ValveCooling, time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Errorf("Failed reading a DB entry: %v", err)
+		return
+	}
+	if len(dbEntries) != 8 {
+		t.Errorf("Got wrong number of entries: %d", len(dbEntries))
+		return
+	}
+	db.cleanStates(ValveCooling, time.Now().Add(-time.Second))
+	dbEntries, err = db.GetStates(ValveCooling, time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Errorf("Failed reading a DB entry: %v", err)
+		return
+	}
+	if len(dbEntries) != 2 {
+		t.Errorf("Got wrong number of entries: %d", len(dbEntries))
+		return
+	}
+	db.cleanStates(ValveCooling, time.Now().Add(-time.Minute))
+	dbEntries, err = db.GetStates(ValveCooling, time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Errorf("Failed reading a DB entry: %v", err)
+		return
+	}
+	if len(dbEntries) != 0 {
+		t.Errorf("Got wrong number of entries: %d", len(dbEntries))
+		return
+	}
+}
+
+func Test_DB_CleanTemperatures(t *testing.T) {
+	file, err := ioutil.TempFile("/tmp", "go-test")
+	if err != nil {
+		t.SkipNow()
+	}
+	defer os.Remove(file.Name())
+	db, err := OpenDB(file.Name())
+	if err != nil {
+		t.Errorf("Opening the DB failed with: %v", err)
+		return
+	}
+
+	TempLeavingWater.SetValue(1.0)
+	time.Sleep(time.Millisecond)
+	TempLeavingWater.SetValue(2.0)
+	time.Sleep(time.Second)
+	TempLeavingWater.SetValue(3.0)
+
+	dbEntries, err := db.GetTemperatures(TempLeavingWater, time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Errorf("Failed reading a DB entry: %v", err)
+		return
+	}
+	if len(dbEntries) != 3 {
+		t.Errorf("Got wrong number of entries: %d", len(dbEntries))
+		return
+	}
+	db.cleanTemperatures(TempLeavingWater, time.Now().Add(-time.Second))
+	dbEntries, err = db.GetTemperatures(TempLeavingWater, time.Now().Add(-time.Minute))
+	if err != nil {
+		t.Errorf("Failed reading a DB entry: %v", err)
+		return
+	}
+	if len(dbEntries) != 1 {
+		t.Errorf("Got wrong number of entries: %d", len(dbEntries))
+		return
 	}
 }

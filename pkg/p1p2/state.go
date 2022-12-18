@@ -40,29 +40,30 @@ func (s *State) LastUpdated() time.Time {
 	return s.Ts
 }
 
-func (s *State) SetValue(value bool) {
-	s.V = value
+func (s *State) SetValue(newValue bool) {
+	oldValue := s.V
+	s.V = newValue
 	s.Ts = time.Now()
 
 	// Notify event listeners
 	cbs, ok := stateCB[s.id]
 	if ok {
 		for _, cb := range cbs {
-			cb(value)
+			cb(newValue)
 		}
 	}
 
 	cached, ok := stateCache[s.id]
-	if (ok && cached != value) || !ok {
+	if (ok && (cached != newValue)) || !ok {
 		// Notify change event listeners
-		cbs, ok = stateChangedCB[s.id]
+		cbs, ok := stateChangedCB[s.id]
 		if ok {
 			for _, cb := range cbs {
-				cb(value)
+				cb(newValue, oldValue)
 			}
 		}
 	}
-	stateCache[s.id] = value
+	stateCache[s.id] = newValue
 }
 
 func (s *State) Decode(pkt interface{}) {
@@ -73,7 +74,7 @@ func (s *State) Decode(pkt interface{}) {
 }
 
 var stateCB map[sensorID][]func(s bool) = map[sensorID][]func(s bool){}
-var stateChangedCB map[sensorID][]func(s bool) = map[sensorID][]func(s bool){}
+var stateChangedCB map[sensorID][]func(newVal bool, oldVal bool) = map[sensorID][]func(newVal bool, oldVal bool){}
 
 var stateCache map[sensorID]bool = map[sensorID]bool{}
 
@@ -84,7 +85,7 @@ func StateRegisterCallback(s State, f func(s bool)) {
 }
 
 // StateRegisterChangeCallback registers a data change callback
-func StateRegisterChangeCallback(s State, f func(s bool)) {
+func StateRegisterChangeCallback(s State, f func(newVal bool, oldVal bool)) {
 	stateChangedCB[s.id] = append(stateChangedCB[s.id], f)
 }
 

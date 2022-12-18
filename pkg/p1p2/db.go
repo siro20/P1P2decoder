@@ -27,25 +27,61 @@ type StateDBEntry struct {
 }
 
 type DB struct {
-	dbGorm    *gorm.DB
-	lastState map[int]bool
+	dbGorm            *gorm.DB
+	lastState         map[int]bool
+	samplingDurations []time.Duration
+	deletePolicy      time.Duration
+}
+
+func (db *DB) cleanTemperatures(t Temperature, Since time.Time) error {
+	return db.dbGorm.Order("created_at").Where("sensor = ? AND created_at < ?", t.id, Since).Delete(&TemperatureDBEntry{}).Error
+}
+
+func (db *DB) cleanStates(s State, Since time.Time) error {
+	return db.dbGorm.Order("created_at").Where("sensor = ? AND created_at < ?", s.id, Since).Delete(&StateDBEntry{}).Error
 }
 
 func (db *DB) registerState(s State) {
-	StateRegisterChangeCallback(s, func(val bool) {
-		db.dbGorm.Create(&StateDBEntry{State: val, Sensor: s.id})
+	StateRegisterChangeCallback(s, func(newVal bool, oldVal bool) {
+		db.dbGorm.Create(&StateDBEntry{State: oldVal, Sensor: s.id})
+		time.Sleep(time.Millisecond)
+		db.dbGorm.Create(&StateDBEntry{State: newVal, Sensor: s.id})
+		if db.deletePolicy != 0 {
+			db.cleanStates(s, time.Now().Add(-db.deletePolicy))
+		}
 	})
 }
 
 func (db *DB) registerTempCallback(t Temperature) {
-	TemperatureRegisterChangeCallback(t, func(val float32) {
-		db.dbGorm.Create(&TemperatureDBEntry{Temperature: val, Sensor: t.id})
+	TemperatureRegisterChangeCallback(t, func(newVal float32, oldVal float32) {
+		db.dbGorm.Create(&TemperatureDBEntry{Temperature: newVal, Sensor: t.id})
+		if db.deletePolicy != 0 {
+			db.cleanTemperatures(t, time.Now().Add(-db.deletePolicy))
+		}
 	})
 }
 
+// SetDeletionPolicy sets the duration after samples should be deleted from database
+// Default: never
+func (db *DB) SetDeletionPolicy(before time.Duration) {
+	db.deletePolicy = before
+}
+
+// SetAverageSamplingIntervals sets the intervals to average sampling values on
+// Default: Minute, Hour, Day
+// Currently unused
+func (db *DB) SetAverageSamplingIntervals(dur []time.Duration) {
+	db.samplingDurations = dur
+}
+
 func OpenDB(path string) (p1p2db *DB, err error) {
-	p1p2db = &DB{}
-	p1p2db.dbGorm, err = gorm.Open(sqlite.Open(path), &gorm.Config{})
+	p1p2db = &DB{
+		samplingDurations: []time.Duration{time.Minute, time.Hour, time.Hour * 24},
+		deletePolicy:      0,
+	}
+	p1p2db.dbGorm, err = gorm.Open(sqlite.Open(path), &gorm.Config{
+		PrepareStmt: true,
+	})
 	if err != nil {
 		err = fmt.Errorf("Failed to open DB: %v", err)
 		return
@@ -87,21 +123,21 @@ func OpenDB(path string) (p1p2db *DB, err error) {
 }
 
 func (db *DB) GetTemperature(t Temperature) (e TemperatureDBEntry, err error) {
-	err = db.dbGorm.Where("sensor = ?", t.id).First(&e).Error
+	err = db.dbGorm.Limit(1).Order("created_at desc").First(&e, "sensor = ?", t.id).Error
 	return
 }
 
 func (db *DB) GetTemperatures(t Temperature, Since time.Time) (e []TemperatureDBEntry, err error) {
-	err = db.dbGorm.Where("sensor = ? AND created_at BETWEEN ? AND ?", t.id, Since, time.Now()).Find(&e).Error
+	err = db.dbGorm.Order("created_at").Where("sensor = ? AND created_at BETWEEN ? AND ?", t.id, Since, time.Now()).Find(&e).Error
 	return
 }
 
 func (db *DB) GetState(s State) (e StateDBEntry, err error) {
-	err = db.dbGorm.Where("sensor = ?", s.id).First(&e).Error
+	err = db.dbGorm.Limit(1).Order("created_at desc").First(&e, "sensor = ?", s.id).Error
 	return
 }
 
 func (db *DB) GetStates(s State, Since time.Time) (e []StateDBEntry, err error) {
-	err = db.dbGorm.Where("sensor = ? AND created_at BETWEEN ? AND ?", s.id, Since, time.Now()).Find(&e).Error
+	err = db.dbGorm.Order("created_at").Where("sensor = ? AND created_at BETWEEN ? AND ?", s.id, Since, time.Now()).Find(&e).Error
 	return
 }
