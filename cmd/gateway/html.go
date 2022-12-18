@@ -9,10 +9,10 @@ import (
 	"github.com/siro20/p1p2decoder/pkg/p1p2"
 )
 
-func runHtml(db *p1p2.DB, sys p1p2.System) {
+func runHtml(prefix string, db *p1p2.DB, sys p1p2.System) {
 	router := gin.Default()
-	router.LoadHTMLGlob("templates/*.tmpl")
-	router.Static("/assets", "./assets")
+	router.LoadHTMLGlob(prefix + "/templates/*.tmpl")
+	router.Static("/assets", prefix+"/assets")
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{

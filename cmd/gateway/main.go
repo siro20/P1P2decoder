@@ -25,6 +25,7 @@ var (
 	stopbits         = kingpin.Flag("stop", "Serial stop bits: 1/2").Short('s').Int()
 	database         = kingpin.Flag("db", "Path to database for non-volatile storage").Short('e').String()
 	htmlServer       = kingpin.Flag("html", "Run HTTP server").Bool()
+	htmlServerAssets = kingpin.Flag("html-assets-path", "The path to HTML assets.").String()
 	prometheusServer = kingpin.Flag("prometheus", "Run prometheus server").Bool()
 	prometheusAddr   = kingpin.Flag("prometheus-listen-address", "The address to listen on for prometheus requests.").String()
 )
@@ -66,7 +67,12 @@ func main() {
 	}
 
 	if *htmlServer {
-		go runHtml(db, p1p2.Sys)
+		if *htmlServerAssets != "" {
+			go runHtml(*htmlServerAssets, db, p1p2.Sys)
+		} else {
+			go runHtml(".", db, p1p2.Sys)
+		}
+
 	}
 	if *prometheusServer {
 		go runPrometheusServer(p1p2.Sys)

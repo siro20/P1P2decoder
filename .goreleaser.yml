@@ -74,9 +74,8 @@ nfpms:
       - p1p2gateway
     maintainer: "Patrick Rudolph <patrick.rudolph@rub.de>"
     description: |
-      This Golang utility allows to abstract operation usually used when
-      developing low level firmware. It allows to flash, power cycle and
-      get debug output from a DUT.
+      This Golang utility allows to interface with P1P2 bus connected
+      over an character device.
     
     vendor: "siro20"
     homepage: "https://github.com/siro20/P1P2decoder"
