@@ -44,12 +44,25 @@ func (s *State) SetValue(value bool) {
 	s.V = value
 	s.Ts = time.Now()
 
+	// Notify event listeners
 	cbs, ok := stateCB[s.id]
 	if ok {
 		for _, cb := range cbs {
 			cb(value)
 		}
 	}
+
+	cached, ok := stateCache[s.id]
+	if (ok && cached != value) || !ok {
+		// Notify change event listeners
+		cbs, ok = stateChangedCB[s.id]
+		if ok {
+			for _, cb := range cbs {
+				cb(value)
+			}
+		}
+	}
+	stateCache[s.id] = value
 }
 
 func (s *State) Decode(pkt interface{}) {
@@ -60,9 +73,19 @@ func (s *State) Decode(pkt interface{}) {
 }
 
 var stateCB map[sensorID][]func(s bool) = map[sensorID][]func(s bool){}
+var stateChangedCB map[sensorID][]func(s bool) = map[sensorID][]func(s bool){}
 
+var stateCache map[sensorID]bool = map[sensorID]bool{}
+
+// StateRegisterCallback registers a data update callback
+// Might be called for the same value again and again
 func StateRegisterCallback(s State, f func(s bool)) {
 	stateCB[s.id] = append(stateCB[s.id], f)
+}
+
+// StateRegisterChangeCallback registers a data change callback
+func StateRegisterChangeCallback(s State, f func(s bool)) {
+	stateChangedCB[s.id] = append(stateChangedCB[s.id], f)
 }
 
 func newState(n string, d string, f func(pkt interface{}) (bool, error)) State {

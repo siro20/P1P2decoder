@@ -47,12 +47,25 @@ func (t *Temperature) SetValue(v float32) {
 	t.V = v
 	t.Ts = time.Now()
 
+	// Notify event listeners
 	cbs, ok := temperatureCB[t.id]
 	if ok {
 		for _, cb := range cbs {
 			cb(v)
 		}
 	}
+
+	cached, ok := temperatureCache[t.id]
+	if (ok && cached != v) || !ok {
+		// Notify change event listeners
+		cbs, ok = temperatureChangedCB[t.id]
+		if ok {
+			for _, cb := range cbs {
+				cb(v)
+			}
+		}
+	}
+	temperatureCache[t.id] = v
 }
 
 func (t *Temperature) Decode(pkt interface{}) {
@@ -63,9 +76,18 @@ func (t *Temperature) Decode(pkt interface{}) {
 }
 
 var temperatureCB map[sensorID][]func(p float32) = map[sensorID][]func(p float32){}
+var temperatureChangedCB map[sensorID][]func(p float32) = map[sensorID][]func(p float32){}
 
+var temperatureCache map[sensorID]float32 = map[sensorID]float32{}
+
+// TemperatureRegisterCallback registers a data update callback
 func TemperatureRegisterCallback(t Temperature, f func(t float32)) {
 	temperatureCB[t.id] = append(temperatureCB[t.id], f)
+}
+
+// TemperatureRegisterChangeCallback registers a data change callback
+func TemperatureRegisterChangeCallback(t Temperature, f func(t float32)) {
+	temperatureChangedCB[t.id] = append(temperatureChangedCB[t.id], f)
 }
 
 func newTemperature(name string,
