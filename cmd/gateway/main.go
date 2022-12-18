@@ -23,9 +23,12 @@ var (
 	baudrate = kingpin.Flag("baud", "Serial baud rate").Short('b').Int()
 	parity   = kingpin.Flag("parity", "Serial parity: none/even/odd").Default("none").Short('p').String()
 	stopbits = kingpin.Flag("stop", "Serial stop bits: 1/2").Short('s').Int()
+	database = kingpin.Flag("db", "Path to database for non-volatile storage").Short('e').String()
 )
 
 func main() {
+	var db *p1p2.DB
+	var err error
 	kingpin.Parse()
 
 	mode := serial.Mode{
@@ -45,13 +48,21 @@ func main() {
 	} else if *parity == "odd" {
 		mode.Parity = serial.OddParity
 	}
+	if *database != "" {
+		db, err = p1p2.OpenDB(*database)
+		if err != nil {
+			fmt.Printf("Error opening database: %v\n", err)
+			os.Exit(1)
+			return
+		}
+	}
 
 	if (ttyDev == nil || *ttyDev == "") && (dumpFile == nil || *dumpFile == "") {
 		log.Print("No input specified")
 		os.Exit(1)
 	}
 
-	go runHtml(p1p2.Sys)
+	go runHtml(db, p1p2.Sys)
 
 	for {
 		var scanner *bufio.Scanner

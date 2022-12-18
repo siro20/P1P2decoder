@@ -10,7 +10,7 @@
 	<script src="/assets/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 	<script src="/assets/js/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 	<script src="/assets/js/gauge.min.js" crossorigin="anonymous"></script>
-
+	<script src="/assets/js/chart.min.js" crossorigin="anonymous"></script>
 	<script type='text/javascript'>
 	var getGuageInterval = function(minrange, maxrange) {
 			var arr = [];
@@ -60,35 +60,74 @@
 		{{ end }}
 		}, 1000);
 
-{{ range .temperatures }}
+	{{ range .temperatures }}
 
-var radial = new RadialGauge({
-    renderTo: '{{.N}}',
-    width: 300,
-    height: 300,
-    units :"{{ .U }}",
-    title: "{{ .N }}",
-    value: {{ .V }},
-    minValue: {{.RangeMin}},
-    maxValue: {{.RangeMax}},
-    majorTicks: getGuageInterval({{.RangeMin}}, {{.RangeMax}}),
-    minorTicks: 2,
-    strokeTicks: false,
-    highlights: getGuageColor({{.RangeMin}}, {{.RangeMax}}),
-    colorPlate: '#222',
-    colorMajorTicks: '#f5f5f5',
-    colorMinorTicks: '#ddd',
-    colorTitle: '#fff',
-    colorUnits: '#ccc',
-    colorNumbers: '#eee',
-    colorNeedle: 'rgba(200, 128, 128, 1)',
-    colorNeedleEnd: 'rgba(255, 160, 122, .9)',
-    valueBox: true,
-    animationRule: 'bounce',
-    animationDuration: 500
-});
-radial.draw();
-{{ end }}
+	var radial = new RadialGauge({
+		renderTo: '{{.N}}',
+		width: 300,
+		height: 300,
+		units :"{{ .U }}",
+		title: "{{ .N }}",
+		value: {{ .V }},
+		minValue: {{.RangeMin}},
+		maxValue: {{.RangeMax}},
+		majorTicks: getGuageInterval({{.RangeMin}}, {{.RangeMax}}),
+		minorTicks: 2,
+		strokeTicks: false,
+		highlights: getGuageColor({{.RangeMin}}, {{.RangeMax}}),
+		colorPlate: '#222',
+		colorMajorTicks: '#f5f5f5',
+		colorMinorTicks: '#ddd',
+		colorTitle: '#fff',
+		colorUnits: '#ccc',
+		colorNumbers: '#eee',
+		colorNeedle: 'rgba(200, 128, 128, 1)',
+		colorNeedleEnd: 'rgba(255, 160, 122, .9)',
+		valueBox: true,
+		animationRule: 'bounce',
+		animationDuration: 500
+	});
+	radial.draw();
+	{{ end }}
+
+	{{ range .temperatures }}
+	var chart = new Chart(
+		document.getElementById('{{.N}}-chart'),
+		{
+			type: 'line',
+			data: {
+				labels: [],
+				datasets: [{
+				label: '{{.N}}',
+				backgroundColor: 'rgb(255, 99, 132)',
+				borderColor: 'rgb(255, 99, 132)',
+				data: [],
+				}]
+			},
+			options: {}
+		}
+	);
+
+	var update = function() {
+		$.ajax({
+			url: window.location.origin + "/api/v1/temperatures/charts/{{.N}}"
+		}).then(function(data) {
+			for (let i in data) {
+				{{.N}}-chart.data.labels.pop();
+				{{.N}}-chart.data.labels.push(i.created_at);
+				{{.N}}-chart.data.datasets.pop();
+				{{.N}}-chart.data.datasets.forEach((dataset) => {
+					dataset.data.push(i.temperature);
+				});
+			}
+
+			{{.N}}-chart.update();
+		});
+	};
+
+	setInterval(update, 1000);
+	update();
+	{{ end }}
 
 	});
 
@@ -187,6 +226,12 @@ radial.draw();
 					</tr>
 				{{ end }}
 				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Graphs:</small></h2>
+				{{ range .temperatures }}
+					<canvas id="{{.N}}-chart"></canvas><br>
+				{{ end }}
 			</div>
 		</div>
 	</body>
