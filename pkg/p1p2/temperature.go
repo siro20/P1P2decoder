@@ -16,6 +16,7 @@ type Temperature struct {
 	RangeMin   float32   `json:"range_min"`
 	RangeMax   float32   `json:"range_max"`
 	SetPoint   bool      `json:"setpoint"`
+	I          string    `json:"icon"`
 	decodeFunc func(pkt interface{}) (float32, error)
 }
 
@@ -33,6 +34,10 @@ func (t *Temperature) Value() interface{} {
 
 func (t *Temperature) Name() string {
 	return t.N
+}
+
+func (t *Temperature) Icon() string {
+	return t.I
 }
 
 func (t *Temperature) Description() string {
@@ -111,7 +116,8 @@ func newTemperature(name string,
 	decodeFunction func(pkt interface{}) (float32, error),
 	min float32,
 	max float32,
-	setpoint bool) Temperature {
+	setpoint bool,
+	icon string) Temperature {
 	id := IDcnt
 	IDcnt++
 	return Temperature{
@@ -126,6 +132,7 @@ func newTemperature(name string,
 		RangeMin:   min,
 		RangeMax:   max,
 		SetPoint:   setpoint,
+		I:          icon,
 	}
 }
 
@@ -136,7 +143,7 @@ var TempLeavingWater = newTemperature("LeavingWater", "Water temperature sent to
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 90, false,
+	10, 90, false, "mdi:thermometer",
 )
 
 var TempDomesticHotWater = newTemperature("DomesticHotWater", "Actual domestic hot water temperature.",
@@ -146,7 +153,7 @@ var TempDomesticHotWater = newTemperature("DomesticHotWater", "Actual domestic h
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 60, false,
+	10, 60, false, "mdi:home-thermometer",
 )
 
 var TempDomesticHotWaterTarget = newTemperature("DomesticHotWaterTarget", "Target temperature for domestic hot water.",
@@ -156,7 +163,7 @@ var TempDomesticHotWaterTarget = newTemperature("DomesticHotWaterTarget", "Targe
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 60, true,
+	10, 60, true, "mdi:thermometer-check",
 )
 var TempMainZoneTarget = newTemperature("MainZoneTarget", "Target temperature for main zone hot water.",
 	func(pkt interface{}) (float32, error) {
@@ -165,7 +172,7 @@ var TempMainZoneTarget = newTemperature("MainZoneTarget", "Target temperature fo
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 90, true,
+	10, 90, true, "mdi:thermometer-check",
 )
 var TempAdditionalZoneTarget = newTemperature("AdditionalZoneTarget", "Target temperature for additional zone hot water.",
 	func(pkt interface{}) (float32, error) {
@@ -174,7 +181,7 @@ var TempAdditionalZoneTarget = newTemperature("AdditionalZoneTarget", "Target te
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 90, true,
+	10, 90, true, "mdi:thermometer-check",
 )
 var TempOutside = newTemperature("Outside", "Outside air temperature.",
 	func(pkt interface{}) (float32, error) {
@@ -183,7 +190,7 @@ var TempOutside = newTemperature("Outside", "Outside air temperature.",
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	-30, 50, false,
+	-30, 50, false, "mdi:sun-thermometer",
 )
 var TempReturnWater = newTemperature("ReturnWater", "Water temperature received back from the heat emitters.",
 	func(pkt interface{}) (float32, error) {
@@ -192,7 +199,7 @@ var TempReturnWater = newTemperature("ReturnWater", "Water temperature received 
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 90, false,
+	10, 90, false, "mdi:thermometer",
 )
 var TempGasBoiler = newTemperature("GasBoiler", "Water temperature in the gas boiler.",
 	func(pkt interface{}) (float32, error) {
@@ -201,7 +208,7 @@ var TempGasBoiler = newTemperature("GasBoiler", "Water temperature in the gas bo
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	10, 90, false,
+	10, 90, false, "mdi:thermometer",
 )
 var TempRefrigerant = newTemperature("Refrigerant", "Temperature of the refrigant.",
 	func(pkt interface{}) (float32, error) {
@@ -210,7 +217,7 @@ var TempRefrigerant = newTemperature("Refrigerant", "Temperature of the refrigan
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	-30, 50, false,
+	-30, 50, false, "mdi:snowflake-thermometer",
 )
 var TempActualRoom = newTemperature("ActualRoom", "Room temperature of the main control.",
 	func(pkt interface{}) (float32, error) {
@@ -219,7 +226,7 @@ var TempActualRoom = newTemperature("ActualRoom", "Room temperature of the main 
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	0, 40, false,
+	0, 40, false, "mdi:thermometer",
 )
 var TempExternalSensor = newTemperature("ExternalSensor", "External sensor or averaged outside temperature.",
 	func(pkt interface{}) (float32, error) {
@@ -228,7 +235,7 @@ var TempExternalSensor = newTemperature("ExternalSensor", "External sensor or av
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	-30, 50, false,
+	-30, 50, false, "mdi:sun-thermometer",
 )
 var TempDeltaT = newTemperature("DeltaT", "Delta between LWT and RWT.",
 	func(pkt interface{}) (float32, error) {
@@ -237,7 +244,7 @@ var TempDeltaT = newTemperature("DeltaT", "Delta between LWT and RWT.",
 		}
 		return 0.0, fmt.Errorf("Wrong message")
 	},
-	-20, 20, false,
+	-20, 20, false, "mdi:thermometer",
 )
 
 func init() {

@@ -13,6 +13,7 @@ type State struct {
 	Ts         time.Time `json:"last_updated"`
 	T          string    `json:"type"`
 	U          string    `json:"unit"`
+	I          string
 	decodeFunc func(pkt interface{}) (bool, error)
 }
 
@@ -38,6 +39,10 @@ func (s *State) Description() string {
 
 func (s *State) LastUpdated() time.Time {
 	return s.Ts
+}
+
+func (s *State) Icon() string {
+	return s.I
 }
 
 func (s *State) SetValue(newValue bool) {
@@ -89,7 +94,7 @@ func StateRegisterChangeCallback(s State, f func(newVal bool, oldVal bool)) {
 	stateChangedCB[s.id] = append(stateChangedCB[s.id], f)
 }
 
-func newState(n string, d string, f func(pkt interface{}) (bool, error)) State {
+func newState(n string, d string, f func(pkt interface{}) (bool, error), icon string) State {
 	id := IDcnt
 	IDcnt++
 	return State{
@@ -100,6 +105,7 @@ func newState(n string, d string, f func(pkt interface{}) (bool, error)) State {
 		T:          "gauge",
 		Ts:         time.Unix(0, 0),
 		decodeFunc: f,
+		I:          icon,
 	}
 }
 
@@ -109,42 +115,48 @@ var ValveDomesticHotWater = newState("DomesticHotWater", "",
 			return p.Valves&0x80 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:pipe-valve")
 var ValveHeating = newState("Heating", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.Valves&0x01 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:pipe-valve")
 var ValveCooling = newState("Cooling", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.Valves&0x02 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:pipe-valve")
 var ValveMainZone = newState("MainZone", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.Valves&0x20 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:pipe-valve")
 var ValveAdditionalZone = newState("AdditionalZone", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.Valves&0x40 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:pipe-valve")
 var ValveThreeWay = newState("ThreeWay", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.Valves&0x10 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:pipe-valve")
 
 var StatePower = newState("Power", "",
 	func(pkt interface{}) (bool, error) {
@@ -152,14 +164,16 @@ var StatePower = newState("Power", "",
 			return p.Heating&0x01 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:power")
 var StateQuietMode = newState("QuietMode", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.QuietMode&0x02 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:volume-off")
 
 var StateDHWBooster = newState("DHWBooster", "",
 	func(pkt interface{}) (bool, error) {
@@ -167,21 +181,24 @@ var StateDHWBooster = newState("DHWBooster", "",
 			return p.DWHTankMode&0x02 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:power")
 var StateDHWEnable = newState("DHWEnable", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Req); ok {
 			return p.DHWTank&0x01 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:power")
 var StateDHW = newState("DHW", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Req); ok {
 			return p.DWHTankMode&0x40 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:power")
 
 var StateGas = newState("Gas", "",
 	func(pkt interface{}) (bool, error) {
@@ -190,7 +207,8 @@ var StateGas = newState("Gas", "",
 			return p.OperationMode&0x80 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:fire")
 
 var StateCompressor = newState("Compressor", "",
 	func(pkt interface{}) (bool, error) {
@@ -198,7 +216,8 @@ var StateCompressor = newState("Compressor", "",
 			return p.PumpAndCompressorStatus&0x01 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:heat-pump")
 
 var PumpMain = newState("Main", "",
 	func(pkt interface{}) (bool, error) {
@@ -206,7 +225,8 @@ var PumpMain = newState("Main", "",
 			return p.PumpAndCompressorStatus&0x08 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:water-pump")
 
 var PumpDHWCirculation = newState("DHWCirculation", "",
 	func(pkt interface{}) (bool, error) {
@@ -215,7 +235,8 @@ var PumpDHWCirculation = newState("DHWCirculation", "",
 			return p.PumpAndCompressorStatus&0x01 > 0, nil
 		}
 		return false, fmt.Errorf("Wrong message")
-	})
+	},
+	"mdi:water-pump")
 
 func init() {
 	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveDomesticHotWater.Decode(p) })
