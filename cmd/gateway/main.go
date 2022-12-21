@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/siro20/p1p2decoder/pkg/p1p2"
-	serial "go.bug.st/serial.v1"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -30,28 +29,37 @@ var (
 	prometheusAddr   = kingpin.Flag("prometheus-listen-address", "The address to listen on for prometheus requests.").String()
 )
 
+var db *p1p2.DB
+
 func main() {
-	var db *p1p2.DB
+	var cfg *Config
 	var err error
+	var path string
 	kingpin.Parse()
 
-	mode := serial.Mode{
-		BaudRate: 115200,
-		DataBits: 8,
-		Parity:   serial.NoParity,
-		StopBits: serial.OneStopBit,
+	path, err = os.Getwd()
+	if err == nil {
+		cfg, err = ReadConfig(path + "/p1p2.yaml")
 	}
-	if *baudrate > 0 {
-		mode.BaudRate = *baudrate
+	if err != nil {
+		cfg, err = ReadConfig("/etc/p1p2_gateway/p1p2.yaml")
 	}
-	if *stopbits == 2 {
-		mode.StopBits = serial.TwoStopBits
+	if err != nil {
+		dirname, err := os.UserHomeDir()
+		if err == nil {
+			cfg, err = ReadConfig(dirname + "/.config/p1p2_gateway.yaml")
+		}
 	}
-	if *parity == "even" {
-		mode.Parity = serial.EvenParity
-	} else if *parity == "odd" {
-		mode.Parity = serial.OddParity
+	if err != nil {
+		fmt.Printf("WARN: Could not find a config file\n")
+		cfg = &Config{
+			Prometheus: PrometheusConfig{
+				Enable: true,
+			},
+		}
 	}
+	UpdateConfigFromArg(&cfg.Serial)
+
 	if *database != "" {
 		db, err = p1p2.OpenDB(*database)
 		if err != nil {
@@ -61,82 +69,76 @@ func main() {
 		}
 	}
 
-	if (ttyDev == nil || *ttyDev == "") && (dumpFile == nil || *dumpFile == "") {
+	if cfg.Serial.Device == "" && (dumpFile == nil || *dumpFile == "") {
 		log.Print("No input specified")
 		os.Exit(1)
 	}
 
-	if *htmlServer {
-		if *htmlServerAssets != "" {
-			go runHtml(*htmlServerAssets, db, p1p2.Sys)
-		} else {
-			go runHtml(".", db, p1p2.Sys)
-		}
-
+	if cfg.Html.Enable {
+		go runHtml(cfg.Html)
 	}
-	if *prometheusServer {
-		go runPrometheusServer(p1p2.Sys)
+
+	if cfg.Prometheus.Enable {
+		go runPrometheusServer(cfg.Prometheus)
+	}
+
+	if cfg.HomeAssistant.Enable {
+		ha, _ := NewHomeAssistant(cfg.HomeAssistant)
+		HomeAssistantAddSensors(ha)
+		go ha.Serve()
 	}
 
 	for {
 		var scanner *bufio.Scanner
-		var closer io.Closer
+		var rc io.ReadCloser
 		// Poll on Serial to open (Testing)
-		if ttyDev != nil && *ttyDev != "" {
-			con, err := serial.Open(*ttyDev, &mode)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Failed to open TTY: %v\n", err)
-				}
-				time.Sleep(time.Second)
-				continue
-			}
-			scanner = bufio.NewScanner(con)
-			closer = con
+		if cfg.Serial.Device != "" {
+			rc, err = GetSerialFromCfg(cfg.Serial)
 		} else if dumpFile != nil && *dumpFile != "" {
-
-			file, err := os.Open(*dumpFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-			scanner = bufio.NewScanner(file)
-			closer = file
+			rc, err = VirtualGetSerialFromCfg(*dumpFile)
 		}
-
-		for scanner.Scan() {
-			var s string
-			if strings.Contains(scanner.Text(), ":") {
-				s = strings.Split(scanner.Text(), ":")[1]
-			}
-
-			// Remove whitespace
-			s = strings.ReplaceAll(s, ", 0x", "")
-			s = strings.ReplaceAll(s, " 0x", "")
-			s = strings.ReplaceAll(s, " ", "")
-
-			buf, err := hex.DecodeString(s)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Skipping invalid line in file: %s", scanner.Text())
+		scanner = bufio.NewScanner(rc)
+		for scanner.Err() == nil {
+			for scanner.Scan() {
+				var s string
+				if strings.Contains(scanner.Text(), ":") {
+					s = strings.Split(scanner.Text(), ":")[1]
 				}
-				continue
-			}
 
-			_, err = p1p2.Decode(buf)
-			if err != nil {
-				if *verbose {
-					fmt.Printf("Error decoding packet '%s': %v\n", s, err)
+				// Remove whitespace
+				s = strings.ReplaceAll(s, ", 0x", "")
+				s = strings.ReplaceAll(s, " 0x", "")
+				s = strings.ReplaceAll(s, " ", "")
+
+				buf, err := hex.DecodeString(s)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Skipping invalid line in file: %s", scanner.Text())
+					}
+					continue
 				}
-				continue
+
+				_, err = p1p2.Decode(buf)
+				if err != nil {
+					if *verbose {
+						fmt.Printf("Error decoding packet '%s': %v\n", s, err)
+					}
+					continue
+				}
+			}
+			if scanner.Err() != nil {
+				if scanner.Err() != syscall.EINTR {
+					fmt.Printf("Reading from serial failed with: %v\n", scanner.Err())
+				} else {
+					// Clear scanner error by creating new scanner...
+					scanner = bufio.NewScanner(rc)
+				}
 			}
 		}
-		if err := scanner.Err(); err != nil {
-			if err != syscall.EINTR {
-				fmt.Print(err)
-			}
-		}
-		closer.Close()
+
+		rc.Close()
 		if dumpFile != nil && *dumpFile != "" {
+			fmt.Printf("Now waiting...")
 			time.Sleep(time.Second * 99999) // Keep running
 		}
 	}
