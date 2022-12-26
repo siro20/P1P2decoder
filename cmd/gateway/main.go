@@ -42,12 +42,12 @@ func main() {
 		cfg, err = ReadConfig(path + "/p1p2.yaml")
 	}
 	if err != nil {
-		cfg, err = ReadConfig("/etc/p1p2_gateway/p1p2.yaml")
+		cfg, err = ReadConfig("/etc/p1p2gateway/p1p2.yaml")
 	}
 	if err != nil {
 		dirname, err := os.UserHomeDir()
 		if err == nil {
-			cfg, err = ReadConfig(dirname + "/.config/p1p2_gateway.yaml")
+			cfg, err = ReadConfig(dirname + "/.config/p1p2gateway.yaml")
 		}
 	}
 	if err != nil {

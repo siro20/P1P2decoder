@@ -1,12 +1,11 @@
 [Unit]
-Description=P1P2 gateway running on device /dev/%i
+Description=P1P2 gateway
 Wants=network-online.target
 After=network-online.target
-ConditionPathExists=/dev/%i
 
 [Service]
 Environment="GIN_MODE=release"
-ExecStart=/usr/bin/p1p2gateway -c /dev/%i
+ExecStart=/usr/bin/p1p2gateway
 
 [Install]
 WantedBy=multi-user.target

@@ -68,11 +68,11 @@ archives:
 nfpms:
   - 
     id: packages
-    file_name_template: ' {{ .ConventionalFileName }}'
+    file_name_template: '{{ .ConventionalFileName }}'
     package_name: "golang-github-p1p2gateway"
     builds:
       - p1p2gateway
-    maintainer: "Patrick Rudolph <patrick.rudolph@rub.de>"
+    maintainer: "Patrick Rudolph <rudolphpatrick05@gmail.com>"
     description: |
       This Golang utility allows to interface with P1P2 bus connected
       over an character device.
@@ -100,13 +100,16 @@ nfpms:
     contents:
       - src: ./init/p1p2gateway@.service
         dst: /usr/lib/systemd/system/p1p2gateway@.service
+      - src: ./init/p1p2gateway.service
+        dst: /usr/lib/systemd/system/p1p2gateway.service
       - src: ./init/prometheus/p1p2node.yml
-        dst: /etc/prometheus/targets.d/p1p2node.yml 
+        dst: /etc/prometheus/targets.d/p1p2node.yml
       - src: ./assets
         dst: /usr/share/p1p2gateway/assets
       - src: ./templates
         dst: /usr/share/p1p2gateway/templates
-
+      - src: ./init/p1p2.yaml
+        dst: /etc/p1p2gateway/p1p2.yaml
           #
     # Scripts to run at specific stages. (overridable)
     scripts:

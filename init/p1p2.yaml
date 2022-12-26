@@ -1,0 +1,20 @@
+homeassistant:
+  enable: false
+  hostname: localhost
+  port: 8123
+  bearer: ""
+prometheus:
+  enable: true
+  port: 2112
+  ListenAddress: ""
+html:
+  enable: true
+  asset_path: /usr/share/p1p2gateway/
+  port: 80
+  listen_address: ""
+serial:
+  enable: true
+  device: /dev/ttyAMA0
+  baud_rate: 115200
+  parity: ""
+  stop_bits: 1
