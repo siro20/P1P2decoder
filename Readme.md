@@ -1,6 +1,6 @@
 # Daikin P1/P2 bus decoder
 
-This repository contains tools to
+This repository contains golang tools to
  - capture packets from a serial device
  - verify integrity of the received packets
  - decode the P1/P2 packets
@@ -15,12 +15,15 @@ and observations on *DAIKIN EJHA04AAV3*.
 ## Gateway support
 
 The gateway tool located in `cmd/gateway` allows to interface
-with the P1P2 bus serial device.
+with the "P1P2 bus" serial device.
 It exposes
 - a REST HTTP server
 - a prometheus client
 - a HTTP POST client for Home Assistant
 - a web UI in human readable form
+
+
+![Gateway](p1p2_gateway.png)
 
 You need to create a YAML config to properly use the gateway.
 Some fields are optional.
