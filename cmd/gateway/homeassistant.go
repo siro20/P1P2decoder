@@ -176,7 +176,10 @@ func HomeAssistantAddSensors(ha *HomeAssistant) {
 		if t.Type() == "DomesticHotWater" {
 			p1p2.TemperatureRegisterChangeCallbackWithHysteresis(*t, 0.1, f)
 		} else {
-			p1p2.TemperatureRegisterChangeCallbackWithHysteresis(*t, 0.5, f)
+			//
+			// Temperature sensors precision is less than 0.5°C
+			//
+			p1p2.TemperatureRegisterChangeCallbackWithHysteresis(*t, 1, f)
 		}
 	}
 	for _, v := range p1p2.Sys.Valves {
