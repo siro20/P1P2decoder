@@ -101,10 +101,29 @@ func main() {
 		for scanner.Err() == nil {
 			for scanner.Scan() {
 				var s string
-				if strings.Contains(scanner.Text(), ":") {
-					s = strings.Split(scanner.Text(), ":")[1]
+				var timestamp string
+				var state string
+				// Cut of comments starting with #
+				if strings.Contains(scanner.Text(), "#") {
+					s = strings.Split(scanner.Text(), "#")[0]
+				} else {
+					s = scanner.Text()
 				}
-
+				// Split fields. Data is sent after last :
+				if strings.Contains(s, ":") {
+					substr := strings.Split(s, ":")
+					if len(substr) == 2 {
+						timestamp = substr[0]
+						s = substr[1]
+					}
+					if len(substr) >= 3 {
+						timestamp = substr[0]
+						state = substr[1]
+						s = substr[2]
+					}
+				} else {
+					continue
+				}
 				// Remove whitespace
 				s = strings.ReplaceAll(s, ", 0x", "")
 				s = strings.ReplaceAll(s, " 0x", "")
@@ -113,15 +132,14 @@ func main() {
 				buf, err := hex.DecodeString(s)
 				if err != nil {
 					if *verbose {
-						fmt.Printf("Skipping invalid line in file: %s", scanner.Text())
+						fmt.Printf("Skipping invalid line in file: %s:%s:%s", timestamp, state, s)
 					}
 					continue
 				}
-
 				_, err = p1p2.Decode(buf)
 				if err != nil {
 					if *verbose {
-						fmt.Printf("Error decoding packet '%s': %v\n", s, err)
+						fmt.Printf("Error decoding packet %s:%s:%s: %v\n", timestamp, state, s, err)
 					}
 					continue
 				}
