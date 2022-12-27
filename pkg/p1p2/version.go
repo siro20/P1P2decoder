@@ -10,7 +10,16 @@ type SoftwareVersion struct {
 	N          string    `json:"name"`
 	S          string    `json:"version"`
 	Ts         time.Time `json:"last_updated"`
+	I          string
 	decodeFunc func(pkt interface{}) (string, error)
+}
+
+func (s *SoftwareVersion) Unit() string {
+	return ""
+}
+
+func (s *SoftwareVersion) Type() string {
+	return "software"
 }
 
 func (s *SoftwareVersion) Version() string {
@@ -19,6 +28,14 @@ func (s *SoftwareVersion) Version() string {
 
 func (s *SoftwareVersion) Name() string {
 	return s.N
+}
+
+func (s *SoftwareVersion) Icon() string {
+	return s.I
+}
+
+func (s *SoftwareVersion) Description() string {
+	return ""
 }
 
 func (s *SoftwareVersion) SetValue(newVersion string) {
@@ -52,7 +69,7 @@ func SoftwareVersionRegisterCallback(t *SoftwareVersion, f func(v string)) {
 	svCB[t.id] = append(svCB[t.id], f)
 }
 
-func newSoftwareVersion(name string, f func(pkt interface{}) (string, error)) SoftwareVersion {
+func newSoftwareVersion(name string, i string, f func(pkt interface{}) (string, error)) SoftwareVersion {
 	id := IDcnt
 	IDcnt++
 	return SoftwareVersion{
@@ -60,10 +77,11 @@ func newSoftwareVersion(name string, f func(pkt interface{}) (string, error)) So
 		id:         id,
 		S:          "unknown",
 		decodeFunc: f,
+		I:          i,
 	}
 }
 
-var ControlUnitSoftwareVersion = newSoftwareVersion("Control",
+var ControlUnitSoftwareVersion = newSoftwareVersion("Control", "mdi:information",
 	func(pkt interface{}) (string, error) {
 		if p, ok := pkt.(Packet13Resp); ok {
 			return fmt.Sprintf("ID%04X", p.ControlSoftwareVersion), nil
@@ -71,7 +89,7 @@ var ControlUnitSoftwareVersion = newSoftwareVersion("Control",
 		return "unknown", fmt.Errorf("Wrong message")
 	})
 
-var HeatPumpSoftwareVersion = newSoftwareVersion("Heatpump",
+var HeatPumpSoftwareVersion = newSoftwareVersion("Heatpump", "mdi:information",
 	func(pkt interface{}) (string, error) {
 		if p, ok := pkt.(Packet13Resp); ok {
 			return fmt.Sprintf("ID%04X", p.HeatPumpSoftwareVersion), nil
