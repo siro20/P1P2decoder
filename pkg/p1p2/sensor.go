@@ -9,7 +9,7 @@ var IDcnt SensorID
 type Sensor interface {
 	ID() SensorID
 	Unit() string
-	// Type can be one of "gauge", "state", "valve", "software"
+	// Type can be one of "gauge", "state", "valve", "software", "pump"
 	Type() string
 	Value() interface{} // Usually the direct value. Can be a sum if Divisor is > 1
 	Name() string
