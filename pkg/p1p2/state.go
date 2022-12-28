@@ -6,15 +6,17 @@ import (
 )
 
 type State struct {
-	id         sensorID
-	N          string    `json:"name"`
-	V          bool      `json:"value"`
-	Desc       string    `json:"description"`
-	Ts         time.Time `json:"last_updated"`
-	T          string    `json:"type"`
-	U          string    `json:"unit"`
-	I          string
-	decodeFunc func(pkt interface{}) (bool, error)
+	id             SensorID
+	N              string    `json:"name"`
+	V              bool      `json:"value"`
+	Desc           string    `json:"description"`
+	Ts             time.Time `json:"last_updated"`
+	T              string    `json:"type"`
+	U              string    `json:"unit"`
+	I              string
+	decodeFunc     func(pkt interface{}) (bool, error)
+	changeCallback []func(Sensor, bool)
+	updateCallback []func(Sensor, bool)
 }
 
 func (s *State) Unit() string {
@@ -45,30 +47,43 @@ func (s *State) Icon() string {
 	return s.I
 }
 
+func (s *State) ID() SensorID {
+	return s.id
+}
+
 func (s *State) SetValue(newValue bool) {
-	oldValue := s.V
+	var oldValue bool
+	oldValue = s.V
 	s.V = newValue
 	s.Ts = time.Now()
 
 	// Notify event listeners
-	cbs, ok := stateCB[s.id]
-	if ok {
-		for _, cb := range cbs {
-			cb(newValue)
+	for _, cb := range s.updateCallback {
+		cb(s, newValue)
+	}
+	if oldValue != newValue {
+		for _, cb := range s.changeCallback {
+			cb(s, newValue)
 		}
 	}
+}
 
-	cached, ok := stateCache[s.id]
-	if (ok && (cached != newValue)) || !ok {
-		// Notify change event listeners
-		cbs, ok := stateChangedCB[s.id]
-		if ok {
-			for _, cb := range cbs {
-				cb(newValue, oldValue)
-			}
-		}
-	}
-	stateCache[s.id] = newValue
+func (s *State) RegisterUpdateCallback(f func(Sensor, interface{})) error {
+	s.updateCallback = append(s.updateCallback, func(s Sensor, value bool) {
+		f(s, value)
+	})
+	return nil
+}
+
+func (s *State) RegisterStateChangedCallback(f func(Sensor, interface{})) error {
+	s.changeCallback = append(s.changeCallback, func(s Sensor, value bool) {
+		f(s, value)
+	})
+	return nil
+}
+
+func (s *State) RegisterStateChangedWithHysteresisCallback(hysteresis float32, f func(s Sensor, value interface{})) error {
+	return fmt.Errorf("Not supported")
 }
 
 func (s *State) Decode(pkt interface{}) {
@@ -78,34 +93,20 @@ func (s *State) Decode(pkt interface{}) {
 	}
 }
 
-var stateCB map[sensorID][]func(s bool) = map[sensorID][]func(s bool){}
-var stateChangedCB map[sensorID][]func(newVal bool, oldVal bool) = map[sensorID][]func(newVal bool, oldVal bool){}
-
-var stateCache map[sensorID]bool = map[sensorID]bool{}
-
-// StateRegisterCallback registers a data update callback
-// Might be called for the same value again and again
-func StateRegisterCallback(s State, f func(s bool)) {
-	stateCB[s.id] = append(stateCB[s.id], f)
-}
-
-// StateRegisterChangeCallback registers a data change callback
-func StateRegisterChangeCallback(s State, f func(newVal bool, oldVal bool)) {
-	stateChangedCB[s.id] = append(stateChangedCB[s.id], f)
-}
-
 func newState(n string, t string, d string, f func(pkt interface{}) (bool, error), icon string) State {
 	id := IDcnt
 	IDcnt++
 	return State{
-		id:         id,
-		N:          n,
-		Desc:       d,
-		U:          "boolean",
-		T:          t,
-		Ts:         time.Unix(0, 0),
-		decodeFunc: f,
-		I:          icon,
+		id:             id,
+		N:              n,
+		Desc:           d,
+		U:              "boolean",
+		T:              t,
+		Ts:             time.Unix(0, 0),
+		decodeFunc:     f,
+		I:              icon,
+		changeCallback: []func(Sensor, bool){},
+		updateCallback: []func(Sensor, bool){},
 	}
 }
 

@@ -6,12 +6,13 @@ import (
 )
 
 type SoftwareVersion struct {
-	id         sensorID
-	N          string    `json:"name"`
-	S          string    `json:"version"`
-	Ts         time.Time `json:"last_updated"`
-	I          string
-	decodeFunc func(pkt interface{}) (string, error)
+	id             SensorID
+	N              string    `json:"name"`
+	S              string    `json:"version"`
+	Ts             time.Time `json:"last_updated"`
+	decodeFunc     func(pkt interface{}) (string, error)
+	changeCallback []func(Sensor, string)
+	updateCallback []func(Sensor, string)
 }
 
 func (s *SoftwareVersion) Unit() string {
@@ -31,21 +32,52 @@ func (s *SoftwareVersion) Name() string {
 }
 
 func (s *SoftwareVersion) Icon() string {
-	return s.I
+	return "mdi:information"
 }
 
 func (s *SoftwareVersion) Description() string {
 	return ""
 }
 
+func (s *SoftwareVersion) Value() interface{} {
+	return s.Version()
+}
+
+func (s *SoftwareVersion) ID() SensorID {
+	return s.id
+}
+
+func (s *SoftwareVersion) RegisterUpdateCallback(f func(Sensor, interface{})) error {
+	s.updateCallback = append(s.updateCallback, func(s Sensor, value string) {
+		f(s, value)
+	})
+	return nil
+}
+
+func (s *SoftwareVersion) RegisterStateChangedCallback(f func(Sensor, interface{})) error {
+	s.changeCallback = append(s.changeCallback, func(s Sensor, value string) {
+		f(s, value)
+	})
+	return nil
+}
+
+func (s *SoftwareVersion) RegisterStateChangedWithHysteresisCallback(hysteresis float32, f func(s Sensor, value interface{})) error {
+	return fmt.Errorf("Not supported")
+}
+
 func (s *SoftwareVersion) SetValue(newVersion string) {
+	var oldversion string
+
+	oldversion = s.S
 	s.S = newVersion
 	s.Ts = time.Now()
 
-	cbs, ok := svCB[s.id]
-	if ok {
-		for _, cb := range cbs {
-			cb(newVersion)
+	for _, cb := range s.updateCallback {
+		cb(s, newVersion)
+	}
+	if oldversion != newVersion {
+		for _, cb := range s.changeCallback {
+			cb(s, newVersion)
 		}
 	}
 }
@@ -63,25 +95,20 @@ func (s *SoftwareVersion) Decode(pkt interface{}) error {
 	return nil
 }
 
-var svCB map[sensorID][]func(p string) = map[sensorID][]func(p string){}
-
-func SoftwareVersionRegisterCallback(t *SoftwareVersion, f func(v string)) {
-	svCB[t.id] = append(svCB[t.id], f)
-}
-
-func newSoftwareVersion(name string, i string, f func(pkt interface{}) (string, error)) SoftwareVersion {
+func newSoftwareVersion(name string, f func(pkt interface{}) (string, error)) SoftwareVersion {
 	id := IDcnt
 	IDcnt++
 	return SoftwareVersion{
-		N:          name,
-		id:         id,
-		S:          "unknown",
-		decodeFunc: f,
-		I:          i,
+		N:              name,
+		id:             id,
+		S:              "unknown",
+		decodeFunc:     f,
+		changeCallback: []func(Sensor, string){},
+		updateCallback: []func(Sensor, string){},
 	}
 }
 
-var ControlUnitSoftwareVersion = newSoftwareVersion("Control", "mdi:information",
+var ControlUnitSoftwareVersion = newSoftwareVersion("Control",
 	func(pkt interface{}) (string, error) {
 		if p, ok := pkt.(Packet13Resp); ok {
 			return fmt.Sprintf("ID%04X", p.ControlSoftwareVersion), nil
@@ -89,7 +116,7 @@ var ControlUnitSoftwareVersion = newSoftwareVersion("Control", "mdi:information"
 		return "unknown", fmt.Errorf("Wrong message")
 	})
 
-var HeatPumpSoftwareVersion = newSoftwareVersion("Heatpump", "mdi:information",
+var HeatPumpSoftwareVersion = newSoftwareVersion("Heatpump",
 	func(pkt interface{}) (string, error) {
 		if p, ok := pkt.(Packet13Resp); ok {
 			return fmt.Sprintf("ID%04X", p.HeatPumpSoftwareVersion), nil

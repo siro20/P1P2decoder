@@ -2,11 +2,12 @@ package p1p2
 
 import "time"
 
-type sensorID int
+type SensorID int
 
-var IDcnt sensorID
+var IDcnt SensorID
 
 type Sensor interface {
+	ID() SensorID
 	Unit() string
 	// Type can be one of "gauge", "state", "valve", "software"
 	Type() string
@@ -15,4 +16,12 @@ type Sensor interface {
 	Icon() string
 	Description() string
 	LastUpdated() time.Time
+
+	// Invoke function on Value update
+	RegisterUpdateCallback(f func(s Sensor, value interface{})) error
+	// Invoke function on Value change
+	RegisterStateChangedCallback(f func(s Sensor, value interface{})) error
+	// Invoke function on Value change with hysteresis
+	// Not supported by all sensors
+	RegisterStateChangedWithHysteresisCallback(hysteresis float32, f func(s Sensor, value interface{})) error
 }

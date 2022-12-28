@@ -19,29 +19,9 @@ var (
 	packet    = ""
 )
 
-func PrintFloat(pref string, t p1p2.Temperature) {
-	p1p2.TemperatureRegisterCallback(t, func(v float32) {
-		if newPacket {
-			fmt.Printf("\nDecoding packet '%s':\n", packet)
-			newPacket = false
-		}
-		fmt.Printf("%-16s %-22s: %f\n", pref, t.Name(), v)
-	})
-}
-
-func PrintState(pref string, s p1p2.State) {
-	p1p2.StateRegisterCallback(s, func(v bool) {
-		if newPacket {
-			fmt.Printf("\nDecoding packet '%s':\n", packet)
-			newPacket = false
-		}
-		fmt.Printf("%-16s %-22s: %t\n", pref, s.Name(), v)
-	})
-}
-
 func main() {
 	fmt.Printf("Decoding dump file with the following syntax:\n")
-	fmt.Printf("[timestamp :][0x] 00 [,][ ][0x] 01 [,][ ][0x] 02 ...\n")
+	fmt.Printf("[timestamp :][state :][0x] 00 [,][ ][0x] 01 [,][ ][0x] 02 ...\n")
 	fmt.Printf("Examples:\n")
 	fmt.Printf(" 000: 0x01, 0x02, 0x03\n")
 	fmt.Printf(" 0xFF, 0xDD, 0xEE\n")
@@ -55,38 +35,22 @@ func main() {
 	}
 	defer file.Close()
 
-	PrintFloat("Temperature", p1p2.TempLeavingWater)
-	PrintFloat("Temperature", p1p2.TempExternalSensor)
-	PrintFloat("Temperature", p1p2.TempActualRoom)
-	PrintFloat("Temperature", p1p2.TempRefrigerant)
-	PrintFloat("Temperature", p1p2.TempGasBoiler)
-	PrintFloat("Temperature", p1p2.TempReturnWater)
-	PrintFloat("Temperature", p1p2.TempOutside)
-	PrintFloat("Temperature", p1p2.TempAdditionalZoneTarget)
-	PrintFloat("Temperature", p1p2.TempMainZoneTarget)
-	PrintFloat("Temperature", p1p2.TempDomesticHotWater)
-	PrintFloat("Temperature", p1p2.TempDomesticHotWaterTarget)
-	PrintState("State", p1p2.StateCompressor)
-	PrintState("State", p1p2.StateGas)
-	PrintState("State", p1p2.StatePower)
-	PrintState("State", p1p2.StateQuietMode)
-	PrintState("State", p1p2.StateDHWEnable)
-	PrintState("State", p1p2.StateDHW)
-	PrintState("State", p1p2.StateDHWBooster)
-	PrintState("Valve", p1p2.ValveThreeWay)
-	PrintState("Valve", p1p2.ValveAdditionalZone)
-	PrintState("Valve", p1p2.ValveMainZone)
-	PrintState("Valve", p1p2.ValveCooling)
-	PrintState("Valve", p1p2.ValveHeating)
-	PrintState("Valve", p1p2.ValveDomesticHotWater)
-	PrintState("Pump", p1p2.PumpMain)
-	PrintState("Pump", p1p2.PumpDHWCirculation)
+	for i := range p1p2.Sensors {
+		p1p2.Sensors[i].RegisterStateChangedCallback(func(s p1p2.Sensor, value interface{}) {
+			fmt.Printf("Sensor %s %s changed to %v\n", s.Type(), s.Name(), value)
+		})
+	}
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		var s string
 		if strings.Contains(scanner.Text(), ":") {
-			s = strings.Split(scanner.Text(), ":")[1]
+			split := strings.Split(scanner.Text(), ":")
+			if len(split) == 3 {
+				s = split[2]
+			} else {
+				s = split[1]
+			}
 		}
 
 		// Remove whitespace

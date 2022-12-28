@@ -160,71 +160,68 @@ func (h *HomeAssistant) SendSensor(name string, binary bool, s HomeAssistantStat
 	return
 }
 
+func DeviceClassFromSensor(s p1p2.Sensor) string {
+	if s.Type() == "gauge" {
+		return "temperature"
+	} else if s.Type() == "valve" {
+		return "opening"
+	} else if s.Type() == "state" {
+		if s.ID() == p1p2.StatePower.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() {
+			return "power"
+		}
+		if s.ID() == p1p2.StateCompressor.ID() || s.ID() == p1p2.StateGas.ID() || s.ID() == p1p2.PumpDHWCirculation.ID() {
+			return "running"
+		}
+		if s.ID() == p1p2.PumpMain.ID() {
+			return "running"
+		}
+	} else if s.Type() == "time" {
+		return "timestamp"
+	}
+	return ""
+}
+
 func HomeAssistantAddSensors(ha *HomeAssistant) {
-	for _, t := range p1p2.Sys.Temperatures {
-		f := func(t p1p2.Temperature, hysteresis float32, newVal float32, oldVal float32) {
-			ha.SendSensor(strings.ToLower(t.Name()), false, HomeAssistantState{
-				State: fmt.Sprintf("%.1f", newVal),
-				Attributes: HomeAssistantAttributes{
-					UnitOfMeasurement: t.Unit(),
-					FriendlyName:      t.Name(),
-					Icon:              t.Icon(),
-					DeviceClass:       "temperature",
-				},
-			})
+	f := func(s p1p2.Sensor, value interface{}) {
+		deviceClass := DeviceClassFromSensor(s)
+		state := HomeAssistantState{
+			Attributes: HomeAssistantAttributes{
+				UnitOfMeasurement: s.Unit(),
+				FriendlyName:      s.Name(),
+				Icon:              s.Icon(),
+				DeviceClass:       deviceClass,
+			},
 		}
-		if t.Type() == "DomesticHotWater" {
-			p1p2.TemperatureRegisterChangeCallbackWithHysteresis(*t, 0.1, f)
+
+		if s.Type() == "gauge" {
+			newVal, ok := value.(float32)
+			if !ok {
+				return
+			}
+			state.State = fmt.Sprintf("%.1f", newVal)
+			ha.SendSensor(strings.ToLower(s.Name()), false, state)
+		} else if s.Type() == "valve" || s.Type() == "state" {
+			newVal, ok := value.(bool)
+			if !ok {
+				return
+			}
+			state.State = strconv.FormatBool(newVal)
+			ha.SendSensor(strings.ToLower(s.Name()), true, state)
+		}
+	}
+
+	for i := range p1p2.Sensors {
+		if p1p2.Sensors[i].Type() == "gauge" {
+			if p1p2.Sensors[i].Name() == "DomesticHotWater" {
+				p1p2.Sensors[i].RegisterStateChangedWithHysteresisCallback(0.1, f)
+			} else {
+				//
+				// Temperature sensors precision is less than 0.5°C
+				//
+				p1p2.Sensors[i].RegisterStateChangedWithHysteresisCallback(1.0, f)
+			}
 		} else {
-			//
-			// Temperature sensors precision is less than 0.5°C
-			//
-			p1p2.TemperatureRegisterChangeCallbackWithHysteresis(*t, 1, f)
+			p1p2.Sensors[i].RegisterStateChangedCallback(f)
 		}
-	}
-	for _, v := range p1p2.Sys.Valves {
-		p1p2.StateRegisterChangeCallback(*v, func(newVal bool, oldVal bool) {
-			ha.SendSensor(strings.ToLower(v.Name()), true, HomeAssistantState{
-				State: strconv.FormatBool(newVal),
-				Attributes: HomeAssistantAttributes{
-					FriendlyName: v.Name(),
-					Icon:         v.Icon(),
-					DeviceClass:  "opening",
-				},
-			})
-		})
-	}
-	for _, s := range p1p2.Sys.Status {
-		p1p2.StateRegisterChangeCallback(*s, func(newVal bool, oldVal bool) {
-			class := ""
-			if s.Name() == "Power" || s.Name() == "DHW" || s.Name() == "DHWEnable" {
-				class = "power"
-			}
-			if s.Name() == "Compressor" || s.Name() == "Main" || s.Name() == "DHWCirculation" {
-				class = "running"
-			}
-			if s.Name() == "Compressor" || s.Name() == "Main" || s.Name() == "DHWCirculation" {
-				class = "running"
-			}
-			ha.SendSensor(strings.ToLower(s.Name()), true, HomeAssistantState{
-				State: strconv.FormatBool(newVal),
-				Attributes: HomeAssistantAttributes{
-					FriendlyName: s.Name(),
-					Icon:         s.Icon(),
-					DeviceClass:  class,
-				},
-			})
-		})
-	}
-	for _, p := range p1p2.Sys.Pumps {
-		p1p2.StateRegisterChangeCallback(*p, func(newVal bool, oldVal bool) {
-			ha.SendSensor(strings.ToLower(p.Name()), true, HomeAssistantState{
-				State: strconv.FormatBool(newVal),
-				Attributes: HomeAssistantAttributes{
-					FriendlyName: p.Name(),
-					Icon:         p.Icon(),
-				},
-			})
-		})
 	}
 }

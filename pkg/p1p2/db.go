@@ -14,7 +14,7 @@ type TemperatureDBEntry struct {
 	UpdatedAt   time.Time  `json:"updated_at"`
 	DeletedAt   *time.Time `json:"deleted_at"`
 	Temperature float32    `json:"temperature"`
-	Sensor      sensorID   `json:"-"`
+	Sensor      SensorID   `json:"-"`
 }
 
 type StateDBEntry struct {
@@ -23,7 +23,7 @@ type StateDBEntry struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
 	State     bool       `json:"state"`
-	Sensor    sensorID   `json:"-"`
+	Sensor    SensorID   `json:"-"`
 }
 
 type DB struct {
@@ -42,10 +42,15 @@ func (db *DB) cleanStates(s State, Since time.Time) error {
 }
 
 func (db *DB) registerState(s State) {
-	StateRegisterChangeCallback(s, func(newVal bool, oldVal bool) {
-		db.dbGorm.Create(&StateDBEntry{State: oldVal, Sensor: s.id})
+	s.RegisterStateChangedCallback(func(sensor Sensor, value interface{}) {
+		newVal, ok := value.(bool)
+		if !ok {
+			return
+		}
+		oldVal := !newVal
+		db.dbGorm.Create(&StateDBEntry{State: oldVal, Sensor: sensor.ID()})
 		time.Sleep(time.Millisecond)
-		db.dbGorm.Create(&StateDBEntry{State: newVal, Sensor: s.id})
+		db.dbGorm.Create(&StateDBEntry{State: newVal, Sensor: sensor.ID()})
 		if db.deletePolicy != 0 {
 			db.cleanStates(s, time.Now().Add(-db.deletePolicy))
 		}
@@ -53,8 +58,12 @@ func (db *DB) registerState(s State) {
 }
 
 func (db *DB) registerTempCallback(t Temperature) {
-	TemperatureRegisterChangeCallback(t, func(newVal float32, oldVal float32) {
-		db.dbGorm.Create(&TemperatureDBEntry{Temperature: newVal, Sensor: t.id})
+	t.RegisterStateChangedCallback(func(s Sensor, value interface{}) {
+		newVal, ok := value.(float32)
+		if !ok {
+			return
+		}
+		db.dbGorm.Create(&TemperatureDBEntry{Temperature: newVal, Sensor: s.ID()})
 		if db.deletePolicy != 0 {
 			db.cleanTemperatures(t, time.Now().Add(-db.deletePolicy))
 		}

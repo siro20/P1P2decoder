@@ -19,12 +19,19 @@ Use the sensor to register the callback. It will be called whenever the
 data.
 
 ```
-p1p2.TemperatureRegisterCallback(p1p2.TempLeavingWater, func(v float32) {
-	fmt.Printf("Temperature %-22s: %f\n", p1p2.TempLeavingWater.Name(), v)
-})
-p1p2.TemperatureRegisterCallback(p1p2.TempExternalSensor, func(v float32) {
-	fmt.Printf("Temperature %-22s: %f\n", p1p2.TempExternalSensor.Name(), v)
-})
+	p1p2.TempLeavingWater.RegisterUpdateCallback(func(s p1p2.Sensor, value interface{}) {
+		v, ok := value.(float32)
+		if ok {
+			fmt.Printf("Temperature %-22s: %f\n", p1p2.TempLeavingWater.Name(), v)
+		}
+	})
+
+	p1p2.TempExternalSensor.RegisterUpdateCallback(func(s p1p2.Sensor, value interface{}) {
+		v, ok := value.(float32)
+		if ok {
+			fmt.Printf("Temperature %-22s: %f\n", p1p2.TempExternalSensor.Name(), v)
+		}
+	})
 
 ...
 

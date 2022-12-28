@@ -6,9 +6,10 @@ import (
 
 func TestSoftwareVersionRegisterCallback(t *testing.T) {
 	gotcha := false
-	SoftwareVersionRegisterCallback(&ControlUnitSoftwareVersion, func(v string) {
+	ControlUnitSoftwareVersion.RegisterUpdateCallback(func(s Sensor, v interface{}) {
 		gotcha = true
-		if v != "ID75b2" {
+		version, ok := v.(string)
+		if ok && version != "ID75b2" {
 			t.Errorf("Got wrong control unit software version: %s", v)
 		}
 	})
@@ -17,6 +18,7 @@ func TestSoftwareVersionRegisterCallback(t *testing.T) {
 		t.Error("Callback triggered, but shouldn't")
 	}
 
+	gotcha = false
 	ControlUnitSoftwareVersion.SetValue("ID75b2")
 
 	if !gotcha {
@@ -25,13 +27,15 @@ func TestSoftwareVersionRegisterCallback(t *testing.T) {
 }
 
 func TestSoftwareVersion(t *testing.T) {
-	SoftwareVersionRegisterCallback(&ControlUnitSoftwareVersion, func(v string) {
-		if v != "ID75B2" {
+	ControlUnitSoftwareVersion.RegisterUpdateCallback(func(s Sensor, v interface{}) {
+		version, ok := v.(string)
+		if ok && version != "ID75B2" {
 			t.Errorf("Got wrong control unit software version: %s", v)
 		}
 	})
-	SoftwareVersionRegisterCallback(&HeatPumpSoftwareVersion, func(v string) {
-		if v != "IDF6C1" {
+	HeatPumpSoftwareVersion.RegisterUpdateCallback(func(s Sensor, v interface{}) {
+		version, ok := v.(string)
+		if ok && version != "IDF6C1" {
 			t.Errorf("Got wrong heat pump software version: %s", v)
 		}
 	})
