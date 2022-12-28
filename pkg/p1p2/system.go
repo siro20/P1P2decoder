@@ -6,6 +6,7 @@ type System struct {
 	Temperatures []*Temperature     `json:"temperatures"`
 	Pumps        []*State           `json:"pumps"`
 	Software     []*SoftwareVersion `json:"software_version"`
+	Flow         []*Flow            `json:"flow"`
 }
 
 var Sys = System{
@@ -47,6 +48,9 @@ var Sys = System{
 		&ControlUnitSoftwareVersion,
 		&HeatPumpSoftwareVersion,
 	},
+	Flow: []*Flow{
+		&MainPumpFlow,
+	},
 }
 
 var Sensors = []Sensor{
@@ -78,4 +82,5 @@ var Sensors = []Sensor{
 	&PumpDHWCirculation,
 	&ControlUnitSoftwareVersion,
 	&HeatPumpSoftwareVersion,
+	&MainPumpFlow,
 }

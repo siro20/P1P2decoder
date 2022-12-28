@@ -220,7 +220,7 @@ var StateCompressor = newState("Compressor", "state", "",
 	},
 	"mdi:heat-pump")
 
-var PumpMain = newState("Main", "state", "",
+var PumpMain = newState("Main", "pump", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			return p.PumpAndCompressorStatus&0x08 > 0, nil
@@ -229,7 +229,7 @@ var PumpMain = newState("Main", "state", "",
 	},
 	"mdi:water-pump")
 
-var PumpDHWCirculation = newState("DHWCirculation", "state", "",
+var PumpDHWCirculation = newState("DHWCirculation", "pump", "",
 	func(pkt interface{}) (bool, error) {
 		if p, ok := pkt.(Packet10Resp); ok {
 			// FIXME

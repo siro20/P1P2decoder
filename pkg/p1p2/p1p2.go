@@ -158,7 +158,8 @@ type Packet13Resp struct {
 	Flags                    [2]uint8 // Unknown
 	Reserved                 [2]uint8
 	Flags2                   uint8 // Lower bits change per second. Flow in L/min?
-	Reserved2                [3]uint8
+	Reserved2                uint8
+	FlowDeciLiterPerMin      uint16
 	ControlSoftwareVersion   uint16
 	HeatPumpSoftwareVersion  uint16
 	Reserved3                [2]uint8

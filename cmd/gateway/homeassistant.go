@@ -161,8 +161,10 @@ func (h *HomeAssistant) SendSensor(name string, binary bool, s HomeAssistantStat
 }
 
 func DeviceClassFromSensor(s p1p2.Sensor) string {
-	if s.Type() == "gauge" {
+	if s.Type() == "temperature" {
 		return "temperature"
+	} else if s.Type() == "gauge" {
+		return "gauge"
 	} else if s.Type() == "valve" {
 		return "opening"
 	} else if s.Type() == "state" {
@@ -184,8 +186,10 @@ func DeviceClassFromSensor(s p1p2.Sensor) string {
 func PrettyNameFromSensor(s p1p2.Sensor) string {
 	prefix := "Sensor"
 	switch s.Type() {
-	case "gauge":
+	case "temperature":
 		prefix = "Temperature"
+	case "gauge":
+		prefix = "Gauge"
 	case "valve":
 		prefix = "Valve"
 	case "pump":
@@ -225,7 +229,7 @@ func SensorToHomeAssistant(ha *HomeAssistant, s p1p2.Sensor, value interface{}) 
 			DeviceClass:       DeviceClassFromSensor(s),
 		},
 	}
-	if s.Type() == "gauge" {
+	if s.Type() == "temperature" || s.Type() == "gauge" {
 		newVal, ok := value.(float32)
 		if !ok {
 			return
@@ -258,7 +262,7 @@ func HomeAssistantAddSensors(ha *HomeAssistant) {
 
 	// Register change event
 	for i := range p1p2.Sensors {
-		if p1p2.Sensors[i].Type() == "gauge" {
+		if p1p2.Sensors[i].Type() == "temperature" {
 			if p1p2.Sensors[i].Name() == "DomesticHotWater" {
 				p1p2.Sensors[i].RegisterStateChangedWithHysteresisCallback(0.1, f)
 			} else {
