@@ -1,10 +1,11 @@
 package p1p2
 
 type System struct {
-	Status       []*State       `json:"state"`
-	Valves       []*State       `json:"valves"`
-	Temperatures []*Temperature `json:"temperatures"`
-	Pumps        []*State       `json:"pumps"`
+	Status       []*State           `json:"state"`
+	Valves       []*State           `json:"valves"`
+	Temperatures []*Temperature     `json:"temperatures"`
+	Pumps        []*State           `json:"pumps"`
+	Software     []*SoftwareVersion `json:"software_version"`
 }
 
 var Sys = System{
@@ -42,6 +43,10 @@ var Sys = System{
 		&PumpMain,
 		&PumpDHWCirculation,
 	},
+	Software: []*SoftwareVersion{
+		&ControlUnitSoftwareVersion,
+		&HeatPumpSoftwareVersion,
+	},
 }
 
 var Sensors = []Sensor{
@@ -71,4 +76,6 @@ var Sensors = []Sensor{
 	&StateCompressor,
 	&PumpMain,
 	&PumpDHWCirculation,
+	&ControlUnitSoftwareVersion,
+	&HeatPumpSoftwareVersion,
 }
