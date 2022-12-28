@@ -14,6 +14,8 @@ import (
 	"github.com/siro20/p1p2decoder/pkg/p1p2"
 )
 
+var domain string = "daikin_p1p2_"
+
 type HomeAssistant struct {
 	cfg     HomeAssistantConfig
 	httpCon map[string]*http.Request
@@ -92,17 +94,14 @@ func (h *HomeAssistant) CheckCfgValid(cfg HomeAssistantConfig) (alive bool, err 
 }
 
 func (h *HomeAssistant) DoConnect(id string) (con *http.Request, err error) {
-	h.httpCon[id], err = http.NewRequest("POST", "http://"+h.cfg.Hostname+":"+strconv.Itoa(h.cfg.Port)+"/api/states/"+id, nil)
+	con, err = http.NewRequest("POST", "http://"+h.cfg.Hostname+":"+strconv.Itoa(h.cfg.Port)+"/api/states/"+id, nil)
 	if err != nil {
-		h.httpCon = nil
 		return nil, err
-
 	}
-	// add authorization header to the req
-	h.httpCon[id].Header.Add("Authorization", "Bearer "+h.cfg.BearerToken)
-	h.httpCon[id].Header.Set("Content-Type", "application/json")
 
-	con = h.httpCon[id]
+	// add authorization header to the req
+	con.Header.Add("Authorization", "Bearer "+h.cfg.BearerToken)
+	con.Header.Set("Content-Type", "application/json")
 
 	return
 }
@@ -114,6 +113,7 @@ func (h *HomeAssistant) DoPost(id string, payload []byte) (err error) {
 		if err != nil {
 			return
 		}
+		h.httpCon[id] = con
 	}
 	if con != nil {
 		con.Body = io.NopCloser(bytes.NewBuffer(payload))
@@ -138,9 +138,9 @@ func (h *HomeAssistant) SendSensor(name string, binary bool, s HomeAssistantStat
 		err = fmt.Errorf("Remote seems offline. Skipping POST...")
 		return
 	}
-	entity_id := "sensor."
+	entity_id := "sensor." + domain
 	if binary {
-		entity_id = "binary_sensor."
+		entity_id = "binary_sensor." + domain
 		if strings.ToLower(s.State) == "true" || strings.ToLower(s.State) == "on" || s.State == "1" {
 			s.State = "on"
 		} else {
@@ -155,7 +155,7 @@ func (h *HomeAssistant) SendSensor(name string, binary bool, s HomeAssistantStat
 	}
 
 	err = h.DoPost(entity_id, jsonStr)
-	fmt.Printf("HA: Sending sensor %s. State: %s Error: %v\n", name, s.State, err)
+	fmt.Printf("HA: Sending sensor %s. State: %s Error: %v\n", entity_id, s.State, err)
 
 	return
 }
@@ -181,35 +181,82 @@ func DeviceClassFromSensor(s p1p2.Sensor) string {
 	return ""
 }
 
+func PrettyNameFromSensor(s p1p2.Sensor) string {
+	prefix := "Sensor"
+	switch s.Type() {
+	case "gauge":
+		prefix = "Temperature"
+	case "valve":
+		prefix = "Valve"
+	case "pump":
+		prefix = "Pump"
+	case "software":
+		prefix = "Software Version"
+	case "time":
+		prefix = "Time"
+	case "state":
+		prefix = ""
+	}
+	return fmt.Sprintf("%s %s", prefix, s.Name())
+}
+
+func EntityNameFromSensor(s p1p2.Sensor) string {
+	str := fmt.Sprintf("%s_%s", s.Type(), s.Name())
+	str = strings.ReplaceAll(str, " ", "_")
+	str = strings.ToLower(str)
+
+	return str
+}
+
+func UnitFromSensor(s p1p2.Sensor) string {
+	unit := s.Unit()
+	if strings.ToLower(unit) == "boolean" || strings.ToLower(unit) == "bool" {
+		unit = ""
+	}
+	return unit
+}
+
+func SensorToHomeAssistant(ha *HomeAssistant, s p1p2.Sensor, value interface{}) {
+	state := HomeAssistantState{
+		Attributes: HomeAssistantAttributes{
+			UnitOfMeasurement: UnitFromSensor(s),
+			FriendlyName:      PrettyNameFromSensor(s),
+			Icon:              s.Icon(),
+			DeviceClass:       DeviceClassFromSensor(s),
+		},
+	}
+	if s.Type() == "gauge" {
+		newVal, ok := value.(float32)
+		if !ok {
+			return
+		}
+		state.State = fmt.Sprintf("%.1f", newVal)
+		ha.SendSensor(EntityNameFromSensor(s), false, state)
+	} else if s.Type() == "valve" || s.Type() == "state" || s.Type() == "pump" {
+		newVal, ok := value.(bool)
+		if !ok {
+			return
+		}
+		state.State = strconv.FormatBool(newVal)
+		ha.SendSensor(EntityNameFromSensor(s), true, state)
+	} else if s.Type() == "software" {
+		newVal, ok := value.(string)
+		if !ok {
+			return
+		}
+		state.State = newVal
+		ha.SendSensor(EntityNameFromSensor(s), false, state)
+	}
+}
+
 func HomeAssistantAddSensors(ha *HomeAssistant) {
 	f := func(s p1p2.Sensor, value interface{}) {
-		deviceClass := DeviceClassFromSensor(s)
-		state := HomeAssistantState{
-			Attributes: HomeAssistantAttributes{
-				UnitOfMeasurement: s.Unit(),
-				FriendlyName:      s.Name(),
-				Icon:              s.Icon(),
-				DeviceClass:       deviceClass,
-			},
-		}
-
-		if s.Type() == "gauge" {
-			newVal, ok := value.(float32)
-			if !ok {
-				return
-			}
-			state.State = fmt.Sprintf("%.1f", newVal)
-			ha.SendSensor(strings.ToLower(s.Name()), false, state)
-		} else if s.Type() == "valve" || s.Type() == "state" {
-			newVal, ok := value.(bool)
-			if !ok {
-				return
-			}
-			state.State = strconv.FormatBool(newVal)
-			ha.SendSensor(strings.ToLower(s.Name()), true, state)
-		}
+		SensorToHomeAssistant(ha, s, value)
 	}
 
+	ha.checkAlive()
+
+	// Register change event
 	for i := range p1p2.Sensors {
 		if p1p2.Sensors[i].Type() == "gauge" {
 			if p1p2.Sensors[i].Name() == "DomesticHotWater" {
@@ -224,4 +271,17 @@ func HomeAssistantAddSensors(ha *HomeAssistant) {
 			p1p2.Sensors[i].RegisterStateChangedCallback(f)
 		}
 	}
+	go func(ha *HomeAssistant) {
+		for {
+			if ha.Alive {
+				// Sent all sensors to HA
+				for i := range p1p2.Sensors {
+					SensorToHomeAssistant(ha, p1p2.Sensors[i], p1p2.Sensors[i].Value())
+				}
+				time.Sleep(time.Hour * 12)
+			} else {
+				time.Sleep(time.Minute * 5)
+			}
+		}
+	}(ha)
 }
