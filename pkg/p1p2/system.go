@@ -7,6 +7,7 @@ type System struct {
 	Pumps        []*State           `json:"pumps"`
 	Software     []*SoftwareVersion `json:"software_version"`
 	Flow         []*Flow            `json:"flow"`
+	Energy       []*Energy          `json:"energy"`
 }
 
 var Sys = System{
@@ -51,6 +52,18 @@ var Sys = System{
 	Flow: []*Flow{
 		&MainPumpFlow,
 	},
+	Energy: []*Energy{
+		&EnergyConsumedBackUpHeaterForHeating,
+		&EnergyConsumedBackUpHeaterForDHW,
+		&EnergyConsumedCompressorForHeating,
+		&EnergyConsumedCompressorForCooling,
+		&EnergyConsumedCompressorForDHW,
+		&EnergyConsumedTotal,
+		&EnergyProducedForHeating,
+		&EnergyProducedForCooling,
+		&EnergyProducedForDHW,
+		&EnergyProducedTotal,
+	},
 }
 
 var Sensors = []Sensor{
@@ -83,4 +96,14 @@ var Sensors = []Sensor{
 	&ControlUnitSoftwareVersion,
 	&HeatPumpSoftwareVersion,
 	&MainPumpFlow,
+	&EnergyConsumedBackUpHeaterForHeating,
+	&EnergyConsumedBackUpHeaterForDHW,
+	&EnergyConsumedCompressorForHeating,
+	&EnergyConsumedCompressorForCooling,
+	&EnergyConsumedCompressorForDHW,
+	&EnergyConsumedTotal,
+	&EnergyProducedForHeating,
+	&EnergyProducedForCooling,
+	&EnergyProducedForDHW,
+	&EnergyProducedTotal,
 }

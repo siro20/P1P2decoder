@@ -37,6 +37,7 @@ type GenericSensor struct {
 	decodeFunction  func(pkt interface{}) (interface{}, error)
 	cacheCnt        int
 	hysteresisCache map[int]float32
+	unsetValue      bool
 	N               string      `json:"name"`
 	Desc            string      `json:"description"`
 	Ts              time.Time   `json:"last_updated"`
@@ -160,11 +161,12 @@ func (g *GenericSensor) SetValue(newValue interface{}) error {
 	for _, cb := range g.updateCallback {
 		cb(g, newValue)
 	}
-	if newValue != oldValue {
+	if newValue != oldValue || g.unsetValue {
 		for _, cb := range g.changeCallback {
 			cb(g, newValue)
 		}
 	}
+	g.unsetValue = false
 	return nil
 }
 
@@ -197,5 +199,6 @@ func newGenericSensor(sensorName string,
 		updateCallback:  []func(Sensor, interface{}){},
 		hysteresisCache: map[int]float32{},
 		decodeFunction:  decodeFunc,
+		unsetValue:      true,
 	}
 }

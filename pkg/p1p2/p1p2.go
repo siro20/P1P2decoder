@@ -22,6 +22,12 @@ func (s sabs4) Decode() float32 {
 	return float32(s&0xF) - float32(s&0x10)
 }
 
+type uint24 [3]uint8
+
+func (u uint24) Decode() int {
+	return int(u[0])<<16 | int(u[1])<<8 | int(u[2])
+}
+
 type Header struct {
 	RequestResponse uint8
 	SlaveAddress    uint8
@@ -223,6 +229,110 @@ func Packet16RespRegisterCallback(f func(p Packet16Resp)) {
 	packet16RespCB = append(packet16RespCB, f)
 }
 
+type PacketB8RespEnergyConsumed struct {
+	BackUpHeaterForHeating uint24
+	BackUpHeaterForDHW     uint24
+	CompressorForHeating   uint24
+	CompressorForCooling   uint24
+	CompressorForDHW       uint24
+	Total                  uint24
+}
+
+func (p PacketB8RespEnergyConsumed) Crc() bool {
+	return false
+}
+
+var packetB8RespEnergyConsumed []func(p PacketB8RespEnergyConsumed) = []func(p PacketB8RespEnergyConsumed){}
+
+func PacketB8RespEnergyConsumedRegisterCallback(f func(p PacketB8RespEnergyConsumed)) {
+	packetB8RespEnergyConsumed = append(packetB8RespEnergyConsumed, f)
+}
+
+type PacketB8RespEnergyProduced struct {
+	ForHeating uint24
+	ForCooling uint24
+	ForDHW     uint24
+	Total      uint24
+}
+
+func (p PacketB8RespEnergyProduced) Crc() bool {
+	return false
+}
+
+var packetB8RespEnergyProduced []func(p PacketB8RespEnergyProduced) = []func(p PacketB8RespEnergyProduced){}
+
+func PacketB8RespEnergyProducedRegisterCallback(f func(p PacketB8RespEnergyProduced)) {
+	packetB8RespEnergyProduced = append(packetB8RespEnergyProduced, f)
+}
+
+type PacketB8RespOperatingHours struct {
+	Pump                 uint24
+	CompressorForHeating uint24
+	CompressorForCooling uint24
+	CompressorForDHW     uint24
+}
+
+func (p PacketB8RespOperatingHours) Crc() bool {
+	return false
+}
+
+var packetB8RespOperatingHours []func(p PacketB8RespOperatingHours) = []func(p PacketB8RespOperatingHours){}
+
+func PacketB8RespOperatingHoursRegisterCallback(f func(p PacketB8RespOperatingHours)) {
+	packetB8RespOperatingHours = append(packetB8RespOperatingHours, f)
+}
+
+type PacketB8RespOperatingHoursHeater struct {
+	BackupHeater1ForHeating uint24
+	BackupHeater1ForDHW     uint24
+	BackupHeater2ForHeating uint24
+	BackupHeater2ForDHW     uint24
+}
+
+func (p PacketB8RespOperatingHoursHeater) Crc() bool {
+	return false
+}
+
+var packetB8RespOperatingHoursHeater []func(p PacketB8RespOperatingHoursHeater) = []func(p PacketB8RespOperatingHoursHeater){}
+
+func PacketB8RespOperatingHoursHeaterRegisterCallback(f func(p PacketB8RespOperatingHoursHeater)) {
+	packetB8RespOperatingHoursHeater = append(packetB8RespOperatingHoursHeater, f)
+}
+
+type PacketB8RespOperatingHoursCompressor struct {
+	Reserved      [9]uint8
+	GasUsageTotal uint24
+}
+
+func (p PacketB8RespOperatingHoursCompressor) Crc() bool {
+	return false
+}
+
+var packetB8RespOperatingHoursCompressor []func(p PacketB8RespOperatingHoursCompressor) = []func(p PacketB8RespOperatingHoursCompressor){}
+
+func PacketB8RespOperatingHoursCompressorRegisterCallback(f func(p PacketB8RespOperatingHoursCompressor)) {
+	packetB8RespOperatingHoursCompressor = append(packetB8RespOperatingHoursCompressor, f)
+}
+
+type PacketB8RespOperatingHoursGas struct {
+	BoilerForHeating     uint24
+	BoilerForDHW         uint24
+	GasUsageForHeating   uint24
+	GasUsageForDHW       uint24
+	NumberOfBoilerStarts uint24
+	GasUsageTotal        uint24
+}
+
+func (p PacketB8RespOperatingHoursGas) Crc() bool {
+	return false
+}
+
+var packetB8RespOperatingHoursGas []func(p PacketB8RespOperatingHoursGas) = []func(p PacketB8RespOperatingHoursGas){}
+
+func PacketB8RespOperatingHoursGasRegisterCallback(f func(p PacketB8RespOperatingHoursGas)) {
+	packetB8RespOperatingHoursGas = append(packetB8RespOperatingHoursGas, f)
+}
+
 func calcCRC(b []byte) (crc byte, err error) {
 	crc = 0
 
@@ -293,6 +403,57 @@ func decode(b []byte) (pkt interface{}, err error) {
 					return
 				}
 				pkt = p16r
+			} else if hdr.Type == 0xb8 {
+				var DataType uint8
+				var Consumed PacketB8RespEnergyConsumed
+				var Produced PacketB8RespEnergyProduced
+				var OperatingHours PacketB8RespOperatingHours
+				var OperatingHoursHeater PacketB8RespOperatingHoursHeater
+				var OperatingHoursCompressor PacketB8RespOperatingHoursCompressor
+				var OperatingHoursGas PacketB8RespOperatingHoursGas
+
+				if err = binary.Read(r, binary.BigEndian, &DataType); err != nil {
+					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+					return
+				}
+				switch DataType {
+				case 0:
+					if err = binary.Read(r, binary.BigEndian, &Consumed); err != nil {
+						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+						return
+					}
+					pkt = Consumed
+				case 1:
+					if err = binary.Read(r, binary.BigEndian, &Produced); err != nil {
+						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+						return
+					}
+					pkt = Produced
+				case 2:
+					if err = binary.Read(r, binary.BigEndian, &OperatingHours); err != nil {
+						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+						return
+					}
+					pkt = OperatingHours
+				case 3:
+					if err = binary.Read(r, binary.BigEndian, &OperatingHoursHeater); err != nil {
+						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+						return
+					}
+					pkt = OperatingHoursHeater
+				case 4:
+					if err = binary.Read(r, binary.BigEndian, &OperatingHoursCompressor); err != nil {
+						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+						return
+					}
+					pkt = OperatingHoursCompressor
+				case 5:
+					if err = binary.Read(r, binary.BigEndian, &OperatingHoursGas); err != nil {
+						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+						return
+					}
+					pkt = OperatingHoursGas
+				}
 			}
 		}
 	} else if hdr.RequestResponse == Request {
@@ -390,6 +551,30 @@ func callbacks(pkt interface{}) {
 		}
 	} else if p, ok := pkt.(Packet16Resp); ok {
 		for _, cb := range packet16RespCB {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+		for _, cb := range packetB8RespEnergyConsumed {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
+		for _, cb := range packetB8RespEnergyProduced {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketB8RespOperatingHours); ok {
+		for _, cb := range packetB8RespOperatingHours {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketB8RespOperatingHoursHeater); ok {
+		for _, cb := range packetB8RespOperatingHoursHeater {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketB8RespOperatingHoursCompressor); ok {
+		for _, cb := range packetB8RespOperatingHoursCompressor {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketB8RespOperatingHoursGas); ok {
+		for _, cb := range packetB8RespOperatingHoursGas {
 			cb(p)
 		}
 	}
