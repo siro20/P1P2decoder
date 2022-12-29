@@ -4,15 +4,18 @@ import "testing"
 
 func TestTemperatureRegisterCallback(t *testing.T) {
 	gotcha := false
-	TempLeavingWater.RegisterStateChangedCallback(func(s Sensor, value interface{}) {
+	err := TempLeavingWater.RegisterStateChangedCallback(func(s Sensor, value interface{}) {
 		gotcha = true
 	})
-	TempDomesticHotWater.SetValue(1.0)
+	if err != nil {
+		t.Errorf("RegisterStateChangedCallback failed with %v", err)
+	}
+	TempDomesticHotWater.SetValue(float32(1.0))
 	if gotcha {
 		t.Error("Callback triggered, but shouldn't")
 	}
 
-	TempLeavingWater.SetValue(1.0)
+	TempLeavingWater.SetValue(float32(1.0))
 
 	if !gotcha {
 		t.Error("Callback not invoked")
@@ -21,9 +24,9 @@ func TestTemperatureRegisterCallback(t *testing.T) {
 
 func TestTemperatureRegisterChangeCallback(t *testing.T) {
 	gotcha := false
-	TempLeavingWater.SetValue(0.0)
+	TempLeavingWater.SetValue(float32(0.0))
 
-	TempLeavingWater.RegisterStateChangedWithHysteresisCallback(1.0, func(s Sensor, value interface{}) {
+	err := TempLeavingWater.RegisterStateChangedWithHysteresisCallback(1.0, func(s Sensor, value interface{}) {
 		newVal, ok := value.(float32)
 		if !ok {
 			return
@@ -32,12 +35,15 @@ func TestTemperatureRegisterChangeCallback(t *testing.T) {
 			gotcha = true
 		}
 	})
-	TempDomesticHotWater.SetValue(1.0)
+	if err != nil {
+		t.Errorf("RegisterStateChangedWithHysteresisCallback failed with %v", err)
+	}
+	TempDomesticHotWater.SetValue(float32(1.0))
 	if gotcha {
 		t.Error("Callback triggered, but shouldn't")
 	}
 
-	TempLeavingWater.SetValue(1.0)
+	TempLeavingWater.SetValue(float32(1.0))
 
 	if !gotcha {
 		t.Error("Callback not invoked")
@@ -47,17 +53,23 @@ func TestTemperatureRegisterChangeCallback(t *testing.T) {
 func TestTemperatureRegisterChangeCallbackWithHysteresis(t *testing.T) {
 	gotcha := false
 	gotcha2 := false
-	TempLeavingWater.SetValue(0.0)
+	TempLeavingWater.SetValue(float32(0.0))
 
-	TempLeavingWater.RegisterStateChangedWithHysteresisCallback(1.0, func(s Sensor, value interface{}) {
+	err := TempLeavingWater.RegisterStateChangedWithHysteresisCallback(1.0, func(s Sensor, value interface{}) {
 		gotcha = true
 	})
-	TempLeavingWater.RegisterStateChangedWithHysteresisCallback(0.5, func(s Sensor, value interface{}) {
+	if err != nil {
+		t.Errorf("RegisterStateChangedWithHysteresisCallback failed with %v", err)
+	}
+	err = TempLeavingWater.RegisterStateChangedWithHysteresisCallback(0.5, func(s Sensor, value interface{}) {
 		gotcha2 = true
 	})
+	if err != nil {
+		t.Errorf("RegisterStateChangedWithHysteresisCallback failed with %v", err)
+	}
 	gotcha = false
 	gotcha2 = false
-	TempLeavingWater.SetValue(0.5)
+	TempLeavingWater.SetValue(float32(0.5))
 	if gotcha {
 		t.Error("Callback triggered, but shouldn't")
 	}
@@ -66,7 +78,7 @@ func TestTemperatureRegisterChangeCallbackWithHysteresis(t *testing.T) {
 	}
 	gotcha = false
 	gotcha2 = false
-	TempLeavingWater.SetValue(1.0)
+	TempLeavingWater.SetValue(float32(1.0))
 	if !gotcha {
 		t.Error("Callback not invoked")
 	}
@@ -75,7 +87,7 @@ func TestTemperatureRegisterChangeCallbackWithHysteresis(t *testing.T) {
 	}
 	gotcha = false
 	gotcha2 = false
-	TempLeavingWater.SetValue(1.5)
+	TempLeavingWater.SetValue(float32(1.5))
 	if gotcha {
 		t.Error("Callback triggered, but shouldn't")
 	}
@@ -85,7 +97,7 @@ func TestTemperatureRegisterChangeCallbackWithHysteresis(t *testing.T) {
 
 	gotcha = false
 	gotcha2 = false
-	TempLeavingWater.SetValue(2.0)
+	TempLeavingWater.SetValue(float32(2.0))
 	if !gotcha {
 		t.Error("Callback not invoked")
 	}
