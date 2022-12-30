@@ -5,6 +5,7 @@ This repository contains golang tools to
  - verify integrity of the received packets
  - decode the P1/P2 packets
  - display the data using a HTTP server
+ - interface 3rdparty tools
 
 The tools are designed to work with my custom PCB
 [P1P2_HBS_USBCdc_Modem](https://github.com/siro20/P1P2_HBS_USBCdc_Modem)
