@@ -167,6 +167,12 @@ func DeviceClassFromSensor(s p1p2.Sensor) string {
 		return "gauge"
 	} else if s.Type() == "valve" {
 		return "opening"
+	} else if s.Type() == "energy" {
+		return "energy"
+	} else if s.Type() == "working_hours" {
+		return "duration"
+	} else if s.Type() == "count" {
+		return ""
 	} else if s.Type() == "state" {
 		if s.ID() == p1p2.StatePower.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() {
 			return "power"
@@ -200,6 +206,12 @@ func PrettyNameFromSensor(s p1p2.Sensor) string {
 		prefix = "Time"
 	case "state":
 		prefix = ""
+	case "count":
+		prefix = "Number of"
+	case "working_hours":
+		prefix = "Working hours"
+	case "energy":
+		prefix = "Energy"
 	}
 	return fmt.Sprintf("%s %s", prefix, s.Name())
 }
@@ -249,6 +261,13 @@ func SensorToHomeAssistant(ha *HomeAssistant, s p1p2.Sensor, value interface{}) 
 			return
 		}
 		state.State = newVal
+		ha.SendSensor(EntityNameFromSensor(s), false, state)
+	} else if s.Type() == "working_hours" || s.Type() == "count" || s.Type() == "energy" {
+		newVal, ok := value.(int)
+		if !ok {
+			return
+		}
+		state.State = fmt.Sprintf("%d", newVal)
 		ha.SendSensor(EntityNameFromSensor(s), false, state)
 	}
 }
