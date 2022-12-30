@@ -37,7 +37,7 @@ func main() {
 
 	for i := range p1p2.Sensors {
 		p1p2.Sensors[i].RegisterStateChangedCallback(func(s p1p2.Sensor, value interface{}) {
-			fmt.Printf("Sensor %s %s changed to %v\n", s.Type(), s.Name(), value)
+			fmt.Printf("Sensor %s %s changed to %v %s\n", s.Type(), s.Name(), value, s.Unit())
 		})
 	}
 
