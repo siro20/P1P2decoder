@@ -34,7 +34,7 @@ var Sys = System{
 		&ValveThreeWay,
 	},
 	Status: []*State{
-		&StatePower,
+		&StateHeatingEnabled,
 		&StateQuietMode,
 		&StateDHWBooster,
 		&StateDHWEnable,
@@ -99,7 +99,7 @@ var Sensors = []Sensor{
 	&ValveMainZone,
 	&ValveAdditionalZone,
 	&ValveThreeWay,
-	&StatePower,
+	&StateHeatingEnabled,
 	&StateQuietMode,
 	&StateDHWBooster,
 	&StateDHWEnable,

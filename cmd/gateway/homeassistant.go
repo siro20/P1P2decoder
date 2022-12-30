@@ -174,7 +174,7 @@ func DeviceClassFromSensor(s p1p2.Sensor) string {
 	} else if s.Type() == "count" {
 		return ""
 	} else if s.Type() == "state" {
-		if s.ID() == p1p2.StatePower.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() {
+		if s.ID() == p1p2.StateHeatingEnabled.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() {
 			return "power"
 		}
 		if s.ID() == p1p2.StateCompressor.ID() || s.ID() == p1p2.StateGas.ID() || s.ID() == p1p2.PumpDHWCirculation.ID() {

@@ -118,7 +118,7 @@ func OpenDB(path string) (p1p2db *DB, err error) {
 	p1p2db.registerState(ValveMainZone)
 	p1p2db.registerState(ValveAdditionalZone)
 	p1p2db.registerState(ValveThreeWay)
-	p1p2db.registerState(StatePower)
+	p1p2db.registerState(StateHeatingEnabled)
 	p1p2db.registerState(StateQuietMode)
 	p1p2db.registerState(StateDHWBooster)
 	p1p2db.registerState(StateDHWEnable)

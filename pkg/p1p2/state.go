@@ -116,11 +116,11 @@ var ValveThreeWay = State{
 		false),
 }
 
-var StatePower = State{
-	GenericSensor: newGenericSensor("Power",
+var StateHeatingEnabled = State{
+	GenericSensor: newGenericSensor("HeatingEnabled",
 		"state",
 		"",
-		"",
+		"Heating for Main Zone/Additional Zone is enabled, but not necessarily running.",
 		"mdi:power",
 		false,
 		func(pkt interface{}) (interface{}, error) {
@@ -174,7 +174,7 @@ var StateDHWEnable = State{
 	GenericSensor: newGenericSensor("DHWEnable",
 		"state",
 		"",
-		"",
+		"Heating for DHW is enabled, but not necessarily running.",
 		"mdi:power",
 		false,
 		func(pkt interface{}) (interface{}, error) {
@@ -290,7 +290,7 @@ func init() {
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHWEnable.decode(p) })
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHW.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateQuietMode.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { StatePower.decode(p) })
+	Packet10RespRegisterCallback(func(p Packet10Resp) { StateHeatingEnabled.decode(p) })
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateGas.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateCompressor.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { PumpMain.decode(p) })
