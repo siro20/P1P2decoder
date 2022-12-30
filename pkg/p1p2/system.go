@@ -8,6 +8,7 @@ type System struct {
 	Software     []*SoftwareVersion `json:"software_version"`
 	Flow         []*Flow            `json:"flow"`
 	Energy       []*Energy          `json:"energy"`
+	WorkingHours []*WorkingHours    `json:"working_hours"`
 }
 
 var Sys = System{
@@ -64,6 +65,20 @@ var Sys = System{
 		&EnergyProducedForDHW,
 		&EnergyProducedTotal,
 	},
+	WorkingHours: []*WorkingHours{
+		&WorkingHoursMainPump,
+		&WorkingHoursCompressorForHeating,
+		&WorkingHoursCompressorForCooling,
+		&WorkingHoursCompressorForDHW,
+		&WorkingHoursBoilerForHeating,
+		&WorkingHoursBoilerForDHW,
+		&CounterNumberOfBoilerStarts,
+		&CounterNumberOfCompressorStarts,
+		&WorkingHoursBackupHeater2ForDHW,
+		&WorkingHoursBackupHeater1ForHeating,
+		&WorkingHoursBackupHeater1ForDHW,
+		&WorkingHoursBackupHeater2ForHeating,
+	},
 }
 
 var Sensors = []Sensor{
@@ -106,4 +121,16 @@ var Sensors = []Sensor{
 	&EnergyProducedForCooling,
 	&EnergyProducedForDHW,
 	&EnergyProducedTotal,
+	&WorkingHoursMainPump,
+	&WorkingHoursCompressorForHeating,
+	&WorkingHoursCompressorForCooling,
+	&WorkingHoursCompressorForDHW,
+	&WorkingHoursBoilerForHeating,
+	&WorkingHoursBoilerForDHW,
+	&CounterNumberOfBoilerStarts,
+	&CounterNumberOfCompressorStarts,
+	&WorkingHoursBackupHeater2ForDHW,
+	&WorkingHoursBackupHeater1ForHeating,
+	&WorkingHoursBackupHeater1ForDHW,
+	&WorkingHoursBackupHeater2ForHeating,
 }

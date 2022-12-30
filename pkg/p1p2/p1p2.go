@@ -300,8 +300,8 @@ func PacketB8RespOperatingHoursHeaterRegisterCallback(f func(p PacketB8RespOpera
 }
 
 type PacketB8RespOperatingHoursCompressor struct {
-	Reserved      [9]uint8
-	GasUsageTotal uint24
+	Reserved                 [9]uint8
+	NumberOfCompressorStarts uint24
 }
 
 func (p PacketB8RespOperatingHoursCompressor) Crc() bool {
