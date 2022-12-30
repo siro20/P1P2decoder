@@ -40,24 +40,67 @@
 			$.ajax({
 				url: window.location.origin + "/api/v1/valves/{{.N}}"
 			}).then(function(data) {
-				$('.valve-{{.N}}').html(data.value);
+				$('.valve-{{.N}}').html(string(data.value));
 			});
 		{{ end }}
 		{{ range .pumps }}
 			$.ajax({
 				url: window.location.origin + "/api/v1/pumps/{{.N}}"
 			}).then(function(data) {
-				$('.pump-{{.N}}').html(data.value);
+				$('.pump-{{.N}}').html(string(data.value));
 			});
 		{{ end }}
 		{{ range .status }}
 			$.ajax({
 				url: window.location.origin + "/api/v1/status/{{.N}}"
 			}).then(function(data) {
-				$('.status-{{.N}}').html(data.value);
+				$('.status-{{.N}}').html(string(data.value));
 			});
 		{{ end }}
 		}, 1000);
+
+		setInterval(function() {
+		{{ range .time }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/time/{{.N}}"
+			}).then(function(data) {
+				$('.time-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		}, 60 * 10000);
+
+		setInterval(function() {
+		{{ range .software }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/software/{{.N}}"
+			}).then(function(data) {
+				$('.software-{{.N}}').html(data.value);
+				$('canvas[id="{{.N}}"]').attr('data-value', data.value);
+			});
+		
+		{{ end }}
+		{{ range .flow }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/flow/{{.N}}"
+			}).then(function(data) {
+				$('.flow-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		{{ range .energy }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/energy/{{.N}}"
+			}).then(function(data) {
+				$('.energy-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		{{ range .working_hours }}
+			$.ajax({
+				url: window.location.origin + "/api/v1/working_hours/{{.N}}"
+			}).then(function(data) {
+				$('.working_hours-{{.N}}').html(data.value);
+			});
+		{{ end }}
+		}, 60 * 60 * 1000);
 
 	{{ range .temperatures }}
 
@@ -147,7 +190,7 @@
 				{{ range .pumps }}
 					<tr>
 					<td>{{ .N }}</td>
-					<td><div class="pump-{{.N}}">{{ .V }}</div></td>
+					<td><div class="pump-{{.N}}">{{ .V | printf "%t" }}</div></td>
 					<td>{{ .Desc }}</td>
 					</tr>
 				{{ end }}
@@ -164,7 +207,7 @@
 				{{ range .valves }}
 					<tr>
 					<td>{{ .N }}</td>
-					<td><div class="valve-{{.N}}">{{ .V }}</div></td>
+					<td><div class="valve-{{.N}}">{{ .V | printf "%t" }}</div></td>
 					<td>{{ .Desc }}</td>
 					</tr>
 				{{ end }}
@@ -181,7 +224,92 @@
 				{{ range .status }}
 					<tr>
 					<td>{{ .N }}</td>
-					<td><div class="status-{{.N}}">{{ .V }}</div></td>
+					<td><div class="status-{{.N}}">{{ .V | printf "%t"}}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Software:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .software }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="software-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Flow:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .flow }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="flow-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Energy:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .energy }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="energy-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>Working hours:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .working_hours }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="working_hours-{{.N}}">{{ .V }}</div></td>
+					<td>{{ .Desc }}</td>
+					</tr>
+				{{ end }}
+				</table>
+			</div>
+			<div class="rounded-3 border border-3" style="padding: 20px">
+				<h2><small>System time:</small></h2>
+				<table class="table">
+					<tr>
+					<th>Name:</th>
+					<th>Value:</th>
+					<th>Description:</th>
+					</tr>
+				{{ range .time }}
+					<tr>
+					<td>{{ .N }}</td>
+					<td><div class="time-{{.N}}">{{ .V }}</div></td>
 					<td>{{ .Desc }}</td>
 					</tr>
 				{{ end }}
