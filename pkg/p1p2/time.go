@@ -18,7 +18,7 @@ var SystemTime = DateTime{
 		time.Unix(0, 0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(Packet12Req); ok {
-				rfc3339 := fmt.Sprintf("20%02d-%02d-%02dT%02d:%02d:00Z00:00", p.DateYear,
+				rfc3339 := fmt.Sprintf("20%02d-%02d-%02dT%02d:%02d:00Z", p.DateYear,
 					p.DateMonth, p.DateDayOfMonth, p.TimeHours, p.TimeMinutes)
 				return time.Parse(time.RFC3339, rfc3339)
 			}
