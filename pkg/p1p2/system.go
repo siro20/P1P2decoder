@@ -9,6 +9,7 @@ type System struct {
 	Flow         []*Flow            `json:"flow"`
 	Energy       []*Energy          `json:"energy"`
 	WorkingHours []*WorkingHours    `json:"working_hours"`
+	Time         []*DateTime        `json:"time"`
 }
 
 var Sys = System{
@@ -79,6 +80,9 @@ var Sys = System{
 		&WorkingHoursBackupHeater1ForDHW,
 		&WorkingHoursBackupHeater2ForHeating,
 	},
+	Time: []*DateTime{
+		&SystemTime,
+	},
 }
 
 var Sensors = []Sensor{
@@ -133,4 +137,5 @@ var Sensors = []Sensor{
 	&WorkingHoursBackupHeater1ForHeating,
 	&WorkingHoursBackupHeater1ForDHW,
 	&WorkingHoursBackupHeater2ForHeating,
+	&SystemTime,
 }
