@@ -79,6 +79,9 @@ func (g *GenericSensor) ID() SensorID {
 }
 
 func (g *GenericSensor) Value() interface{} {
+	if g.unsetValue {
+		return nil
+	}
 	return g.V
 }
 
