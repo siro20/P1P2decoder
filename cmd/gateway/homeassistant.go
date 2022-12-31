@@ -155,7 +155,7 @@ func (h *HomeAssistant) SendSensor(name string, binary bool, s HomeAssistantStat
 		entity_id = "binary_sensor." + domain
 		if strings.ToLower(s.State) == "true" || strings.ToLower(s.State) == "on" || s.State == "1" {
 			s.State = "on"
-		} else {
+		} else if strings.ToLower(s.State) == "false" || strings.ToLower(s.State) == "off" || s.State == "0" {
 			s.State = "off"
 		}
 	}
@@ -243,6 +243,7 @@ func UnitFromSensor(s p1p2.Sensor) string {
 
 func SensorToHomeAssistant(ha *HomeAssistant, s p1p2.Sensor, value interface{}) {
 	state := HomeAssistantState{
+		State: "",
 		Attributes: HomeAssistantAttributes{
 			UnitOfMeasurement: UnitFromSensor(s),
 			FriendlyName:      PrettyNameFromSensor(s),
@@ -252,31 +253,28 @@ func SensorToHomeAssistant(ha *HomeAssistant, s p1p2.Sensor, value interface{}) 
 	}
 	if s.Type() == "temperature" || s.Type() == "gauge" {
 		newVal, ok := value.(float32)
-		if !ok {
-			return
+		if ok {
+			state.State = fmt.Sprintf("%.1f", newVal)
 		}
-		state.State = fmt.Sprintf("%.1f", newVal)
 		ha.SendSensor(EntityNameFromSensor(s), false, state)
 	} else if s.Type() == "valve" || s.Type() == "state" || s.Type() == "pump" {
 		newVal, ok := value.(bool)
-		if !ok {
-			return
+		if ok {
+			state.State = strconv.FormatBool(newVal)
 		}
-		state.State = strconv.FormatBool(newVal)
 		ha.SendSensor(EntityNameFromSensor(s), true, state)
 	} else if s.Type() == "software" {
 		newVal, ok := value.(string)
-		if !ok {
-			return
+		if ok {
+			state.State = newVal
 		}
 		state.State = newVal
 		ha.SendSensor(EntityNameFromSensor(s), false, state)
 	} else if s.Type() == "working_hours" || s.Type() == "count" || s.Type() == "energy" {
 		newVal, ok := value.(int)
-		if !ok {
-			return
+		if ok {
+			state.State = fmt.Sprintf("%d", newVal)
 		}
-		state.State = fmt.Sprintf("%d", newVal)
 		ha.SendSensor(EntityNameFromSensor(s), false, state)
 	}
 }
@@ -287,8 +285,15 @@ func HomeAssistantAddSensors(ha *HomeAssistant) {
 	}
 
 	ha.checkAlive()
-
+	if ha.Alive {
+		for i := range p1p2.Sensors {
+			// Sent all sensors to HA
+			// Use a nil value to create the sensor but don't provide data
+			SensorToHomeAssistant(ha, p1p2.Sensors[i], nil)
+		}
+	}
 	// Register change event
+
 	for i := range p1p2.Sensors {
 		if p1p2.Sensors[i].Type() == "temperature" {
 			if p1p2.Sensors[i].ID() == p1p2.ValveDomesticHotWater.ID() {
@@ -308,7 +313,9 @@ func HomeAssistantAddSensors(ha *HomeAssistant) {
 			if ha.Alive {
 				// Sent all sensors to HA
 				for i := range p1p2.Sensors {
-					SensorToHomeAssistant(ha, p1p2.Sensors[i], p1p2.Sensors[i].Value())
+					if p1p2.Sensors[i].Value() != nil {
+						SensorToHomeAssistant(ha, p1p2.Sensors[i], p1p2.Sensors[i].Value())
+					}
 				}
 				time.Sleep(time.Hour * 12)
 			} else {
