@@ -174,13 +174,10 @@ func DeviceClassFromSensor(s p1p2.Sensor) string {
 	} else if s.Type() == "count" {
 		return ""
 	} else if s.Type() == "state" {
-		if s.ID() == p1p2.StateHeatingEnabled.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() {
+		if s.ID() == p1p2.StateHeatingEnabled.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() || s.ID() == p1p2.StateGasEnabled.ID() {
 			return "power"
 		}
-		if s.ID() == p1p2.StateCompressor.ID() || s.ID() == p1p2.StateGasEnabled.ID() || s.ID() == p1p2.PumpDHWCirculation.ID() {
-			return "running"
-		}
-		if s.ID() == p1p2.PumpMain.ID() {
+		if s.ID() == p1p2.StateCompressor.ID() || s.ID() == p1p2.PumpDHWCirculation.ID() || s.ID() == p1p2.StateBoilerRunning.ID() || s.ID() == p1p2.PumpMain.ID() {
 			return "running"
 		}
 	} else if s.Type() == "time" {
