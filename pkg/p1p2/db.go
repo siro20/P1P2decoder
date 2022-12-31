@@ -123,7 +123,7 @@ func OpenDB(path string) (p1p2db *DB, err error) {
 	p1p2db.registerState(StateDHWBooster)
 	p1p2db.registerState(StateDHWEnable)
 	p1p2db.registerState(StateDHW)
-	p1p2db.registerState(StateGas)
+	p1p2db.registerState(StateGasEnabled)
 	p1p2db.registerState(StateCompressor)
 	p1p2db.registerState(PumpMain)
 	p1p2db.registerState(PumpDHWCirculation)

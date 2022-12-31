@@ -177,7 +177,7 @@ func DeviceClassFromSensor(s p1p2.Sensor) string {
 		if s.ID() == p1p2.StateHeatingEnabled.ID() || s.ID() == p1p2.StateDHW.ID() || s.ID() == p1p2.StateDHWEnable.ID() {
 			return "power"
 		}
-		if s.ID() == p1p2.StateCompressor.ID() || s.ID() == p1p2.StateGas.ID() || s.ID() == p1p2.PumpDHWCirculation.ID() {
+		if s.ID() == p1p2.StateCompressor.ID() || s.ID() == p1p2.StateGasEnabled.ID() || s.ID() == p1p2.PumpDHWCirculation.ID() {
 			return "running"
 		}
 		if s.ID() == p1p2.PumpMain.ID() {
@@ -282,7 +282,7 @@ func HomeAssistantAddSensors(ha *HomeAssistant) {
 	// Register change event
 	for i := range p1p2.Sensors {
 		if p1p2.Sensors[i].Type() == "temperature" {
-			if p1p2.Sensors[i].Name() == "DomesticHotWater" {
+			if p1p2.Sensors[i].ID() == p1p2.ValveDomesticHotWater.ID() {
 				p1p2.Sensors[i].RegisterStateChangedWithHysteresisCallback(0.1, f)
 			} else {
 				//

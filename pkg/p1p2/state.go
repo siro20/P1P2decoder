@@ -206,16 +206,34 @@ var StateDHW = State{
 		false),
 }
 
-var StateGas = State{
-	GenericSensor: newGenericSensor("Gas",
+var StateGasEnabled = State{
+	GenericSensor: newGenericSensor("GasEnabled",
 		"state",
 		"",
-		"",
+		"The gas boiler is enabled for heating, but not necessarily running.",
 		"mdi:fire",
 		false,
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(Packet10Req); ok {
 				return p.OperationMode&0x80 > 0, nil
+			}
+			return false, fmt.Errorf("Wrong message")
+		},
+		0,
+		0,
+		false),
+}
+
+var StateBoilerRunning = State{
+	GenericSensor: newGenericSensor("BoilerRunning",
+		"state",
+		"",
+		"The gas boiler is running.",
+		"mdi:fire",
+		false,
+		func(pkt interface{}) (interface{}, error) {
+			if p, ok := pkt.(Packet10Resp); ok {
+				return p.DHWActive&2 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
 		},
@@ -291,8 +309,9 @@ func init() {
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHW.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateQuietMode.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateHeatingEnabled.decode(p) })
-	Packet10ReqRegisterCallback(func(p Packet10Req) { StateGas.decode(p) })
+	Packet10ReqRegisterCallback(func(p Packet10Req) { StateGasEnabled.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateCompressor.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { PumpMain.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { PumpDHWCirculation.decode(p) })
+	Packet10RespRegisterCallback(func(p Packet10Resp) { StateBoilerRunning.decode(p) })
 }
