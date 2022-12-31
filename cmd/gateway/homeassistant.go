@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/siro20/p1p2decoder/pkg/p1p2"
@@ -20,6 +21,7 @@ type HomeAssistant struct {
 	cfg     HomeAssistantConfig
 	httpCon map[string]*http.Request
 	Alive   bool
+	Lock    sync.Mutex
 }
 
 type HomeAssistantConfig struct {
@@ -60,10 +62,15 @@ func (h *HomeAssistant) checkAlive() {
 	h.Alive, err = h.CheckCfgValid(h.cfg)
 
 	if !h.Alive || err != nil {
+		h.Lock.Lock()
 		for i := range h.httpCon {
-			h.httpCon[i].Close = true
+			if h.httpCon[i] != nil {
+				h.httpCon[i].Close = true
+				h.httpCon[i] = nil
+			}
 		}
 		h.httpCon = map[string]*http.Request{}
+		h.Lock.Unlock()
 	}
 }
 
@@ -107,14 +114,17 @@ func (h *HomeAssistant) DoConnect(id string) (con *http.Request, err error) {
 }
 
 func (h *HomeAssistant) DoPost(id string, payload []byte) (err error) {
+	h.Lock.Lock()
 	con, ok := h.httpCon[id]
 	if !ok || con == nil {
 		con, err = h.DoConnect(id)
 		if err != nil {
+			h.Lock.Unlock()
 			return
 		}
 		h.httpCon[id] = con
 	}
+	h.Lock.Unlock()
 	if con != nil {
 		con.Body = io.NopCloser(bytes.NewBuffer(payload))
 		// Send req using http Client
@@ -124,7 +134,9 @@ func (h *HomeAssistant) DoPost(id string, payload []byte) (err error) {
 		resp, err := client.Do(con)
 		if err != nil {
 			con.Close = true
+			h.Lock.Lock()
 			h.httpCon[id] = nil
+			h.Lock.Unlock()
 			go h.checkAlive()
 			return err
 		}
