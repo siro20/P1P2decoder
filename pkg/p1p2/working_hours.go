@@ -120,8 +120,8 @@ var CounterNumberOfBoilerStarts = WorkingHours{
 	GenericSensor: newGenericSensor("BoilerStarts",
 		"count",
 		"",
-		"Counter",
-		"mdi:counter",
+		"Number of gas boiler starts.",
+		"mdi:reload",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursGas); ok {
@@ -138,8 +138,8 @@ var CounterNumberOfCompressorStarts = WorkingHours{
 	GenericSensor: newGenericSensor("CompressorStarts",
 		"count",
 		"",
-		"Counter",
-		"mdi:counter",
+		"Number of compressor starts.",
+		"mdi:reload",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursCompressor); ok {

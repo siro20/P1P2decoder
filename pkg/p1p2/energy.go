@@ -13,7 +13,7 @@ var EnergyConsumedBackUpHeaterForHeating = Energy{
 		"energy",
 		"kWh",
 		"Energy meter",
-		"mdi:energy-from-grid",
+		"mdi:transmission-tower-export",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
@@ -31,7 +31,7 @@ var EnergyConsumedBackUpHeaterForDHW = Energy{
 		"energy",
 		"kWh",
 		"Energy meter",
-		"mdi:energy-from-grid",
+		"mdi:transmission-tower-export",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
@@ -49,7 +49,7 @@ var EnergyConsumedCompressorForHeating = Energy{
 		"energy",
 		"kWh",
 		"Compressor energy meter",
-		"mdi:energy-from-grid",
+		"mdi:transmission-tower-export",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
@@ -67,7 +67,7 @@ var EnergyConsumedCompressorForCooling = Energy{
 		"energy",
 		"kWh",
 		"Compressor energy meter",
-		"mdi:energy-from-grid",
+		"mdi:transmission-tower-export",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
@@ -85,7 +85,7 @@ var EnergyConsumedCompressorForDHW = Energy{
 		"energy",
 		"kWh",
 		"Compressor energy meter",
-		"mdi:energy-from-grid",
+		"mdi:transmission-tower-export",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
@@ -103,7 +103,7 @@ var EnergyConsumedTotal = Energy{
 		"energy",
 		"kWh",
 		"Total energy meter",
-		"mdi:energy-from-grid",
+		"mdi:transmission-tower-export",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
@@ -121,7 +121,7 @@ var EnergyProducedForHeating = Energy{
 		"energy",
 		"kWh",
 		"Produced heat for heating energy meter",
-		"mdi:energy-from-grid",
+		"mdi:meter-electric",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
@@ -139,7 +139,7 @@ var EnergyProducedForCooling = Energy{
 		"energy",
 		"kWh",
 		"Produced cooling energy meter",
-		"mdi:energy-from-grid",
+		"mdi:meter-electric",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
@@ -157,7 +157,7 @@ var EnergyProducedForDHW = Energy{
 		"energy",
 		"kWh",
 		"Produced DHW heat energy meter",
-		"mdi:energy-from-grid",
+		"mdi:meter-electric",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
@@ -175,7 +175,7 @@ var EnergyProducedTotal = Energy{
 		"energy",
 		"kWh",
 		"Produced total heat energy meter",
-		"mdi:energy-from-grid",
+		"mdi:meter-electric",
 		int(0),
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
