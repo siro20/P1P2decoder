@@ -159,6 +159,22 @@ func Packet12ReqRegisterCallback(f func(p Packet12Req)) {
 	packet12ReqCB = append(packet12ReqCB, f)
 }
 
+type Packet12Resp struct {
+	Reserved  [12]uint8
+	State     uint8
+	Reserved1 [7]uint8
+}
+
+func (p Packet12Resp) Crc() bool {
+	return true
+}
+
+var packet12RespCB []func(p Packet12Resp) = []func(p Packet12Resp){}
+
+func Packet12RespRegisterCallback(f func(p Packet12Resp)) {
+	packet12RespCB = append(packet12RespCB, f)
+}
+
 type Packet13Resp struct {
 	DHWTankTargetTemperature f8p8     // From Boiler?
 	Flags                    [2]uint8 // Unknown
@@ -382,6 +398,13 @@ func decode(b []byte) (pkt interface{}, err error) {
 					return
 				}
 				pkt = p11r
+			} else if hdr.Type == 0x12 {
+				var p12r Packet12Resp
+				if err = binary.Read(r, binary.BigEndian, &p12r); err != nil {
+					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+					return
+				}
+				pkt = p12r
 			} else if hdr.Type == 0x13 {
 				var p13r Packet13Resp
 				if err = binary.Read(r, binary.BigEndian, &p13r); err != nil {
@@ -535,6 +558,10 @@ func callbacks(pkt interface{}) {
 		}
 	} else if p, ok := pkt.(Packet12Req); ok {
 		for _, cb := range packet12ReqCB {
+			cb(p)
+		}
+	} else if p, ok := pkt.(Packet12Resp); ok {
+		for _, cb := range packet12RespCB {
 			cb(p)
 		}
 	} else if p, ok := pkt.(Packet13Resp); ok {

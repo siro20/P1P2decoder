@@ -192,12 +192,30 @@ var StateDHW = State{
 	GenericSensor: newGenericSensor("DHW",
 		"state",
 		"",
-		"",
+		"The DHW is being heated.",
 		"mdi:power",
 		false,
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Req); ok {
-				return p.DWHTankMode&0x40 > 0, nil
+			if p, ok := pkt.(Packet12Resp); ok {
+				return p.State&0x80 > 0, nil
+			}
+			return false, fmt.Errorf("Wrong message")
+		},
+		0,
+		0,
+		false),
+}
+
+var StateMainHeating = State{
+	GenericSensor: newGenericSensor("MainHeating",
+		"state",
+		"",
+		"The Main heating is being heated.",
+		"mdi:power",
+		false,
+		func(pkt interface{}) (interface{}, error) {
+			if p, ok := pkt.(Packet12Resp); ok {
+				return p.State&0x40 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
 		},
@@ -306,7 +324,8 @@ func init() {
 	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveThreeWay.decode(p) })
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHWBooster.decode(p) })
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHWEnable.decode(p) })
-	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHW.decode(p) })
+	Packet12RespRegisterCallback(func(p Packet12Resp) { StateDHW.decode(p) })
+	Packet12RespRegisterCallback(func(p Packet12Resp) { StateMainHeating.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateQuietMode.decode(p) })
 	Packet10RespRegisterCallback(func(p Packet10Resp) { StateHeatingEnabled.decode(p) })
 	Packet10ReqRegisterCallback(func(p Packet10Req) { StateGasEnabled.decode(p) })

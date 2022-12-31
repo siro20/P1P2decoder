@@ -43,6 +43,7 @@ var Sys = System{
 		&StateGasEnabled,
 		&StateCompressor,
 		&StateBoilerRunning,
+		&StateMainHeating,
 	},
 	Pumps: []*State{
 		&PumpMain,
@@ -112,6 +113,7 @@ var Sensors = []Sensor{
 	&StateGasEnabled,
 	&StateCompressor,
 	&StateBoilerRunning,
+	&StateMainHeating,
 	&PumpMain,
 	&PumpDHWCirculation,
 	&ControlUnitSoftwareVersion,
