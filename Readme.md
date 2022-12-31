@@ -81,6 +81,21 @@ homeassistant:
    sensor data if new data has been received on the serial.
    No further configuration is necessary on Home Assistant.
 
+## Supported packet types
+
+The following packets from the P1P2 bus are decoded:
+
+- Packet 10h Req/Resp
+- Packet 11h Req/Resp
+- Packet 12h Req/Resp
+- Packet 13h     Resp
+- Packet 14h     Resp
+- Packet 16h     Resp
+- Packet b8h     Resp
+
+Those happen between the heat pump and the controller unit
+and can be captured using a passive P1P2 sniffer.
+
 ## Applications
 
 Applications are located in `cmd` folder.
@@ -92,3 +107,5 @@ The decoding library is located in `pkg` folder.
 ## References
 
 - [P1P2Serial](https://github.com/Arnold-n/P1P2Serial)
+- [P1P2_HBS_USBCdc_Modem](https://github.com/siro20/P1P2_HBS_USBCdc_Modem)
+- [Home Assistant](https://www.home-assistant.io/)
