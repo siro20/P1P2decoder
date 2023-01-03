@@ -272,7 +272,7 @@ type PacketB8RespEnergyProduced struct {
 }
 
 func (p PacketB8RespEnergyProduced) Crc() bool {
-	return false
+	return true
 }
 
 var packetB8RespEnergyProduced []func(p PacketB8RespEnergyProduced) = []func(p PacketB8RespEnergyProduced){}
@@ -289,7 +289,7 @@ type PacketB8RespOperatingHours struct {
 }
 
 func (p PacketB8RespOperatingHours) Crc() bool {
-	return false
+	return true
 }
 
 var packetB8RespOperatingHours []func(p PacketB8RespOperatingHours) = []func(p PacketB8RespOperatingHours){}
@@ -303,10 +303,11 @@ type PacketB8RespOperatingHoursHeater struct {
 	BackupHeater1ForDHW     uint24
 	BackupHeater2ForHeating uint24
 	BackupHeater2ForDHW     uint24
+	Reserved                [6]uint8
 }
 
 func (p PacketB8RespOperatingHoursHeater) Crc() bool {
-	return false
+	return true
 }
 
 var packetB8RespOperatingHoursHeater []func(p PacketB8RespOperatingHoursHeater) = []func(p PacketB8RespOperatingHoursHeater){}
@@ -321,7 +322,7 @@ type PacketB8RespOperatingHoursCompressor struct {
 }
 
 func (p PacketB8RespOperatingHoursCompressor) Crc() bool {
-	return false
+	return true
 }
 
 var packetB8RespOperatingHoursCompressor []func(p PacketB8RespOperatingHoursCompressor) = []func(p PacketB8RespOperatingHoursCompressor){}
@@ -340,7 +341,7 @@ type PacketB8RespOperatingHoursGas struct {
 }
 
 func (p PacketB8RespOperatingHoursGas) Crc() bool {
-	return false
+	return true
 }
 
 var packetB8RespOperatingHoursGas []func(p PacketB8RespOperatingHoursGas) = []func(p PacketB8RespOperatingHoursGas){}
