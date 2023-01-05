@@ -42,8 +42,8 @@ const (
 
 const (
 	Heatpump            = 0
-	ExternalController0 = 0xF0 + iota
-	ExternalController1 = 0xF0 + iota
+	ExternalController0 = 0xF0
+	ExternalController1 = 0xF1
 )
 
 type Packet interface {
@@ -245,6 +245,48 @@ func Packet16RespRegisterCallback(f func(p Packet16Resp)) {
 	packet16RespCB = append(packet16RespCB, f)
 }
 
+// auxiliary controller ID, date, time
+type PacketF031Req struct {
+	Reserved       [3]uint8
+	Status         [3]uint8
+	DateYear       uint8
+	DateMonth      uint8
+	DateDayOfMonth uint8
+	TimeHours      uint8
+	TimeMinutes    uint8
+	TimeSeconds    uint8
+}
+
+func (p PacketF031Req) Crc() bool {
+	return true
+}
+
+var packetF031ReqCB []func(p PacketF031Req) = []func(p PacketF031Req){}
+
+func PacketF031ReqRegisterCallback(f func(p PacketF031Req)) {
+	packetF031ReqCB = append(packetF031ReqCB, f)
+}
+
+type Parameter8B struct {
+	Offset uint16
+	Value  uint8
+}
+
+// 8bit parameter exchange
+type PacketF035Req struct {
+	Parameters [6]Parameter8B
+}
+
+func (p PacketF035Req) Crc() bool {
+	return true
+}
+
+var packetF035ReqCB []func(p PacketF035Req) = []func(p PacketF035Req){}
+
+func PacketF035ReqRegisterCallback(f func(p PacketF035Req)) {
+	packetF035ReqCB = append(packetF035ReqCB, f)
+}
+
 type PacketB8RespEnergyConsumed struct {
 	BackUpHeaterForHeating uint24
 	BackUpHeaterForDHW     uint24
@@ -255,7 +297,7 @@ type PacketB8RespEnergyConsumed struct {
 }
 
 func (p PacketB8RespEnergyConsumed) Crc() bool {
-	return false
+	return true
 }
 
 var packetB8RespEnergyConsumed []func(p PacketB8RespEnergyConsumed) = []func(p PacketB8RespEnergyConsumed){}
@@ -511,6 +553,22 @@ func decode(b []byte) (pkt interface{}, err error) {
 				}
 				pkt = p14r
 			}
+		} else if hdr.SlaveAddress == ExternalController0 || hdr.SlaveAddress == ExternalController1 {
+			if hdr.Type == 0x31 {
+				var p31r PacketF031Req
+				if err = binary.Read(r, binary.BigEndian, &p31r); err != nil {
+					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+					return
+				}
+				pkt = p31r
+			} else if hdr.Type == 0x35 {
+				var p35r PacketF035Req
+				if err = binary.Read(r, binary.LittleEndian, &p35r); err != nil {
+					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
+					return
+				}
+				pkt = p35r
+			}
 		}
 	}
 
@@ -579,6 +637,14 @@ func callbacks(pkt interface{}) {
 		}
 	} else if p, ok := pkt.(Packet16Resp); ok {
 		for _, cb := range packet16RespCB {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketF031Req); ok {
+		for _, cb := range packetF031ReqCB {
+			cb(p)
+		}
+	} else if p, ok := pkt.(PacketF035Req); ok {
+		for _, cb := range packetF035ReqCB {
 			cb(p)
 		}
 	} else if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {

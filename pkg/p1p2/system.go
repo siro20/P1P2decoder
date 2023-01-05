@@ -84,6 +84,7 @@ var Sys = System{
 	},
 	Time: []*DateTime{
 		&SystemTime,
+		&UITime,
 	},
 }
 
@@ -142,4 +143,5 @@ var Sensors = []Sensor{
 	&WorkingHoursBackupHeater1ForDHW,
 	&WorkingHoursBackupHeater2ForHeating,
 	&SystemTime,
+	&UITime,
 }
