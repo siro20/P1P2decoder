@@ -5,7 +5,7 @@ import (
 )
 
 type Temperature struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var TempLeavingWater = Temperature{
@@ -15,8 +15,9 @@ var TempLeavingWater = Temperature{
 		"Water temperature sent to the heat emitters.",
 		"mdi:thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.LWTtemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -33,8 +34,9 @@ var TempDomesticHotWater = Temperature{
 		"Actual domestic hot water temperature.",
 		"mdi:home-thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.DHWtemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -51,8 +53,9 @@ var TempDomesticHotWaterTarget = Temperature{
 		"Target temperature for domestic hot water.",
 		"mdi:thermometer-check",
 		float32(0.0),
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.DHWTankTargetTemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -69,8 +72,9 @@ var TempMainZoneTarget = Temperature{
 		"Target temperature for main zone hot water.",
 		"mdi:thermometer-check",
 		float32(0.0),
+		&Packet14Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet14Resp); ok {
+			if p, ok := pkt.(*Packet14Resp); ok {
 				return p.MainZoneTargetTemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -87,8 +91,9 @@ var TempAdditionalZoneTarget = Temperature{
 		"Target temperature for additional zone hot water.",
 		"mdi:thermometer-check",
 		float32(0.0),
+		&Packet14Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet14Resp); ok {
+			if p, ok := pkt.(*Packet14Resp); ok {
 				return p.AddZoneargetTemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -105,8 +110,9 @@ var TempOutside = Temperature{
 		"Outside air temperature.",
 		"mdi:sun-thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.Outsidetemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -123,8 +129,9 @@ var TempReturnWater = Temperature{
 		"Water temperature received back from the heat emitters.",
 		"mdi:thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.RWT.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -141,8 +148,9 @@ var TempGasBoiler = Temperature{
 		"Water temperature in the gas boiler.",
 		"mdi:thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.GasBoiler.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -159,8 +167,9 @@ var TempRefrigerant = Temperature{
 		"Temperature of the refrigant.",
 		"mdi:snowflake-thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.Refrigerant.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -177,8 +186,9 @@ var TempActualRoom = Temperature{
 		"Room temperature of the main control.",
 		"mdi:thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.ActualRoomtemperature.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -195,8 +205,9 @@ var TempExternalSensor = Temperature{
 		"External sensor or averaged outside temperature.",
 		"mdi:sun-thermometer",
 		float32(0.0),
+		&Packet11Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet11Resp); ok {
+			if p, ok := pkt.(*Packet11Resp); ok {
 				return p.ExternalTemperatureSensor.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -213,8 +224,9 @@ var TempDeltaT = Temperature{
 		"Delta between LWT and RWT.",
 		"mdi:thermometer",
 		float32(0.0),
+		&Packet14Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet14Req); ok {
+			if p, ok := pkt.(*Packet14Req); ok {
 				return p.DeltaT.Decode(), nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -222,19 +234,4 @@ var TempDeltaT = Temperature{
 		-20,
 		20,
 		false),
-}
-
-func init() {
-	Packet14ReqRegisterCallback(func(p Packet14Req) { TempDeltaT.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempExternalSensor.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempActualRoom.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempRefrigerant.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempGasBoiler.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempReturnWater.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempOutside.decode(p) })
-	Packet14RespRegisterCallback(func(p Packet14Resp) { TempAdditionalZoneTarget.decode(p) })
-	Packet14RespRegisterCallback(func(p Packet14Resp) { TempMainZoneTarget.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { TempDomesticHotWaterTarget.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempLeavingWater.decode(p) })
-	Packet11RespRegisterCallback(func(p Packet11Resp) { TempDomesticHotWater.decode(p) })
 }

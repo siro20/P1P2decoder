@@ -179,14 +179,15 @@ func newGenericSensor(sensorName string,
 	sensorDescription string,
 	sensorIcon string,
 	initialValue interface{},
+	paketType interface{},
 	decodeFunc func(pkt interface{}) (interface{}, error),
 	minValue float32,
 	maxValue float32,
-	setpoint bool) GenericSensor {
+	setpoint bool) *GenericSensor {
 
 	id := IDcnt
 	IDcnt++
-	return GenericSensor{
+	sensor := GenericSensor{
 		N:               sensorName,
 		Desc:            sensorDescription,
 		Ts:              time.Unix(0, 0),
@@ -204,4 +205,9 @@ func newGenericSensor(sensorName string,
 		decodeFunction:  decodeFunc,
 		unsetValue:      true,
 	}
+	err := RegisterPacketCallback(paketType, sensor.decode)
+	if err != nil {
+		fmt.Printf("Failed to register sensor: %v\n", err)
+	}
+	return &sensor
 }

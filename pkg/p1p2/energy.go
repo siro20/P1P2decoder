@@ -5,7 +5,7 @@ import (
 )
 
 type Energy struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var EnergyConsumedBackUpHeaterForHeating = Energy{
@@ -15,8 +15,9 @@ var EnergyConsumedBackUpHeaterForHeating = Energy{
 		"Energy meter",
 		"mdi:transmission-tower-export",
 		int(0),
+		&PacketB8RespEnergyConsumed{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyConsumed); ok {
 				return p.BackUpHeaterForHeating.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -33,8 +34,9 @@ var EnergyConsumedBackUpHeaterForDHW = Energy{
 		"Energy meter",
 		"mdi:transmission-tower-export",
 		int(0),
+		&PacketB8RespEnergyConsumed{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyConsumed); ok {
 				return p.BackUpHeaterForDHW.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -51,8 +53,9 @@ var EnergyConsumedCompressorForHeating = Energy{
 		"Compressor energy meter",
 		"mdi:transmission-tower-export",
 		int(0),
+		&PacketB8RespEnergyConsumed{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyConsumed); ok {
 				return p.CompressorForHeating.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -69,8 +72,9 @@ var EnergyConsumedCompressorForCooling = Energy{
 		"Compressor energy meter",
 		"mdi:transmission-tower-export",
 		int(0),
+		&PacketB8RespEnergyConsumed{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyConsumed); ok {
 				return p.CompressorForCooling.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -87,8 +91,9 @@ var EnergyConsumedCompressorForDHW = Energy{
 		"Compressor energy meter",
 		"mdi:transmission-tower-export",
 		int(0),
+		&PacketB8RespEnergyConsumed{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyConsumed); ok {
 				return p.CompressorForDHW.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -105,8 +110,9 @@ var EnergyConsumedTotal = Energy{
 		"Total energy meter",
 		"mdi:transmission-tower-export",
 		int(0),
+		&PacketB8RespEnergyConsumed{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyConsumed); ok {
 				return p.Total.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -123,8 +129,9 @@ var EnergyProducedForHeating = Energy{
 		"Produced heat for heating energy meter",
 		"mdi:meter-electric",
 		int(0),
+		&PacketB8RespEnergyProduced{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyProduced); ok {
 				return p.ForHeating.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -141,8 +148,9 @@ var EnergyProducedForCooling = Energy{
 		"Produced cooling energy meter",
 		"mdi:meter-electric",
 		int(0),
+		&PacketB8RespEnergyProduced{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyProduced); ok {
 				return p.ForCooling.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -159,8 +167,9 @@ var EnergyProducedForDHW = Energy{
 		"Produced DHW heat energy meter",
 		"mdi:meter-electric",
 		int(0),
+		&PacketB8RespEnergyProduced{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyProduced); ok {
 				return p.ForDHW.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -177,8 +186,9 @@ var EnergyProducedTotal = Energy{
 		"Produced total heat energy meter",
 		"mdi:meter-electric",
 		int(0),
+		&PacketB8RespEnergyProduced{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
+			if p, ok := pkt.(*PacketB8RespEnergyProduced); ok {
 				return p.Total.Decode(), nil
 			}
 			return int(0), fmt.Errorf("Wrong message")
@@ -186,18 +196,4 @@ var EnergyProducedTotal = Energy{
 		0,
 		0,
 		false),
-}
-
-func init() {
-	PacketB8RespEnergyConsumedRegisterCallback(func(p PacketB8RespEnergyConsumed) { EnergyConsumedBackUpHeaterForHeating.decode(p) })
-	PacketB8RespEnergyConsumedRegisterCallback(func(p PacketB8RespEnergyConsumed) { EnergyConsumedBackUpHeaterForDHW.decode(p) })
-	PacketB8RespEnergyConsumedRegisterCallback(func(p PacketB8RespEnergyConsumed) { EnergyConsumedCompressorForHeating.decode(p) })
-	PacketB8RespEnergyConsumedRegisterCallback(func(p PacketB8RespEnergyConsumed) { EnergyConsumedCompressorForCooling.decode(p) })
-	PacketB8RespEnergyConsumedRegisterCallback(func(p PacketB8RespEnergyConsumed) { EnergyConsumedCompressorForDHW.decode(p) })
-	PacketB8RespEnergyConsumedRegisterCallback(func(p PacketB8RespEnergyConsumed) { EnergyConsumedTotal.decode(p) })
-
-	PacketB8RespEnergyProducedRegisterCallback(func(p PacketB8RespEnergyProduced) { EnergyProducedForHeating.decode(p) })
-	PacketB8RespEnergyProducedRegisterCallback(func(p PacketB8RespEnergyProduced) { EnergyProducedForCooling.decode(p) })
-	PacketB8RespEnergyProducedRegisterCallback(func(p PacketB8RespEnergyProduced) { EnergyProducedForDHW.decode(p) })
-	PacketB8RespEnergyProducedRegisterCallback(func(p PacketB8RespEnergyProduced) { EnergyProducedTotal.decode(p) })
 }

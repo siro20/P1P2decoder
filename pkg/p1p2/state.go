@@ -5,7 +5,7 @@ import (
 )
 
 type State struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var ValveDomesticHotWater = State{
@@ -15,8 +15,9 @@ var ValveDomesticHotWater = State{
 		"",
 		"mdi:pipe-valve",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Valves&0x80 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -33,8 +34,9 @@ var ValveHeating = State{
 		"",
 		"mdi:pipe-valve",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Valves&0x01 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -51,8 +53,9 @@ var ValveCooling = State{
 		"",
 		"mdi:pipe-valve",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Valves&0x02 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -69,8 +72,9 @@ var ValveMainZone = State{
 		"",
 		"mdi:pipe-valve",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Valves&0x20 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -87,8 +91,9 @@ var ValveAdditionalZone = State{
 		"",
 		"mdi:pipe-valve",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Valves&0x40 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -105,8 +110,9 @@ var ValveThreeWay = State{
 		"",
 		"mdi:pipe-valve",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Valves&0x10 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -123,8 +129,9 @@ var StateHeatingEnabled = State{
 		"Heating for Main Zone/Additional Zone is enabled, but not necessarily running.",
 		"mdi:power",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.Heating&0x01 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -141,8 +148,9 @@ var StateQuietMode = State{
 		"",
 		"mdi:volume-off",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.QuietMode&0x02 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -159,8 +167,9 @@ var StateDHWBooster = State{
 		"",
 		"mdi:power",
 		false,
+		&Packet10Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Req); ok {
+			if p, ok := pkt.(*Packet10Req); ok {
 				return p.DWHTankMode&0x02 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -177,8 +186,9 @@ var StateDHWEnable = State{
 		"Heating for DHW is enabled, but not necessarily running.",
 		"mdi:power",
 		false,
+		&Packet10Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Req); ok {
+			if p, ok := pkt.(*Packet10Req); ok {
 				return p.DHWTank&0x01 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -195,8 +205,9 @@ var StateDHW = State{
 		"The DHW is being heated.",
 		"mdi:power",
 		false,
+		&Packet12Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet12Resp); ok {
+			if p, ok := pkt.(*Packet12Resp); ok {
 				return p.State&0x80 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -213,8 +224,9 @@ var StateMainHeating = State{
 		"The Main heating is being heated.",
 		"mdi:power",
 		false,
+		&Packet12Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet12Resp); ok {
+			if p, ok := pkt.(*Packet12Resp); ok {
 				return p.State&0x40 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -231,8 +243,9 @@ var StateGasEnabled = State{
 		"The gas boiler is enabled for heating, but not necessarily running.",
 		"mdi:fire",
 		false,
+		&Packet10Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Req); ok {
+			if p, ok := pkt.(*Packet10Req); ok {
 				return p.OperationMode&0x80 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -249,8 +262,9 @@ var StateBoilerRunning = State{
 		"The gas boiler is running.",
 		"mdi:fire",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.DHWActive&2 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -267,8 +281,9 @@ var StateCompressor = State{
 		"",
 		"mdi:heat-pump",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.PumpAndCompressorStatus&0x01 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -285,8 +300,9 @@ var PumpMain = State{
 		"",
 		"mdi:water-pump",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				return p.PumpAndCompressorStatus&0x08 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
@@ -303,8 +319,9 @@ var PumpDHWCirculation = State{
 		"",
 		"mdi:water-pump",
 		false,
+		&Packet10Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet10Resp); ok {
+			if p, ok := pkt.(*Packet10Resp); ok {
 				// FIXME
 				return p.PumpAndCompressorStatus&0x01 > 0, nil
 			}
@@ -313,24 +330,4 @@ var PumpDHWCirculation = State{
 		0,
 		0,
 		false),
-}
-
-func init() {
-	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveDomesticHotWater.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveHeating.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveCooling.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveMainZone.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveAdditionalZone.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { ValveThreeWay.decode(p) })
-	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHWBooster.decode(p) })
-	Packet10ReqRegisterCallback(func(p Packet10Req) { StateDHWEnable.decode(p) })
-	Packet12RespRegisterCallback(func(p Packet12Resp) { StateDHW.decode(p) })
-	Packet12RespRegisterCallback(func(p Packet12Resp) { StateMainHeating.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { StateQuietMode.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { StateHeatingEnabled.decode(p) })
-	Packet10ReqRegisterCallback(func(p Packet10Req) { StateGasEnabled.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { StateCompressor.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { PumpMain.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { PumpDHWCirculation.decode(p) })
-	Packet10RespRegisterCallback(func(p Packet10Resp) { StateBoilerRunning.decode(p) })
 }

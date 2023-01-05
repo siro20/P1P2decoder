@@ -5,7 +5,7 @@ import (
 )
 
 type SoftwareVersion struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var ControlUnitSoftwareVersion = SoftwareVersion{
@@ -15,8 +15,9 @@ var ControlUnitSoftwareVersion = SoftwareVersion{
 		"Software version string",
 		"mdi:information",
 		"-",
+		&Packet13Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet13Resp); ok {
+			if p, ok := pkt.(*Packet13Resp); ok {
 				return fmt.Sprintf("ID%04X", p.ControlSoftwareVersion), nil
 			}
 			return "unknown", fmt.Errorf("Wrong message")
@@ -33,8 +34,9 @@ var HeatPumpSoftwareVersion = SoftwareVersion{
 		"Software version string",
 		"mdi:information",
 		"-",
+		&Packet13Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet13Resp); ok {
+			if p, ok := pkt.(*Packet13Resp); ok {
 				return fmt.Sprintf("ID%04X", p.HeatPumpSoftwareVersion), nil
 			}
 			return "unknown", fmt.Errorf("Wrong message")
@@ -42,9 +44,4 @@ var HeatPumpSoftwareVersion = SoftwareVersion{
 		0,
 		0,
 		false),
-}
-
-func init() {
-	Packet13RespRegisterCallback(func(p Packet13Resp) { _ = ControlUnitSoftwareVersion.decode(p) })
-	Packet13RespRegisterCallback(func(p Packet13Resp) { _ = HeatPumpSoftwareVersion.decode(p) })
 }

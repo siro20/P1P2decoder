@@ -5,7 +5,7 @@ import (
 )
 
 type Flow struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var MainPumpFlow = Flow{
@@ -15,8 +15,9 @@ var MainPumpFlow = Flow{
 		"Flow in Liter / Minute",
 		"mdi:gauge",
 		float32(0.0),
+		&Packet13Resp{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet13Resp); ok {
+			if p, ok := pkt.(*Packet13Resp); ok {
 				return float32(p.FlowDeciLiterPerMin) / 10, nil
 			}
 			return float32(0.0), fmt.Errorf("Wrong message")
@@ -24,8 +25,4 @@ var MainPumpFlow = Flow{
 		0,
 		0,
 		false),
-}
-
-func init() {
-	Packet13RespRegisterCallback(func(p Packet13Resp) { MainPumpFlow.decode(p) })
 }

@@ -5,7 +5,7 @@ import (
 )
 
 type WorkingHours struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var WorkingHoursMainPump = WorkingHours{
@@ -15,6 +15,7 @@ var WorkingHoursMainPump = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHours{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHours); ok {
 				return p.Pump.Decode(), nil
@@ -33,6 +34,7 @@ var WorkingHoursCompressorForHeating = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHours{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHours); ok {
 				return p.CompressorForHeating.Decode(), nil
@@ -51,6 +53,7 @@ var WorkingHoursCompressorForCooling = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHours{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHours); ok {
 				return p.CompressorForCooling.Decode(), nil
@@ -69,6 +72,7 @@ var WorkingHoursCompressorForDHW = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHours{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHours); ok {
 				return p.CompressorForDHW.Decode(), nil
@@ -87,6 +91,7 @@ var WorkingHoursBoilerForHeating = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHoursGas{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursGas); ok {
 				return p.BoilerForHeating.Decode(), nil
@@ -105,6 +110,7 @@ var WorkingHoursBoilerForDHW = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHoursGas{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursGas); ok {
 				return p.BoilerForDHW.Decode(), nil
@@ -123,6 +129,7 @@ var CounterNumberOfBoilerStarts = WorkingHours{
 		"Number of gas boiler starts.",
 		"mdi:reload",
 		int(0),
+		&PacketB8RespOperatingHoursGas{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursGas); ok {
 				return p.NumberOfBoilerStarts.Decode(), nil
@@ -141,6 +148,7 @@ var CounterNumberOfCompressorStarts = WorkingHours{
 		"Number of compressor starts.",
 		"mdi:reload",
 		int(0),
+		&PacketB8RespOperatingHoursCompressor{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursCompressor); ok {
 				return p.NumberOfCompressorStarts.Decode(), nil
@@ -159,6 +167,7 @@ var WorkingHoursBackupHeater1ForHeating = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHoursHeater{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursHeater); ok {
 				return p.BackupHeater1ForHeating.Decode(), nil
@@ -177,6 +186,7 @@ var WorkingHoursBackupHeater1ForDHW = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHoursHeater{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursHeater); ok {
 				return p.BackupHeater1ForDHW.Decode(), nil
@@ -195,6 +205,7 @@ var WorkingHoursBackupHeater2ForHeating = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHoursHeater{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursHeater); ok {
 				return p.BackupHeater2ForHeating.Decode(), nil
@@ -213,6 +224,7 @@ var WorkingHoursBackupHeater2ForDHW = WorkingHours{
 		"Timer",
 		"mdi:calendar-clock",
 		int(0),
+		&PacketB8RespOperatingHoursHeater{},
 		func(pkt interface{}) (interface{}, error) {
 			if p, ok := pkt.(PacketB8RespOperatingHoursHeater); ok {
 				return p.BackupHeater2ForDHW.Decode(), nil
@@ -222,19 +234,4 @@ var WorkingHoursBackupHeater2ForDHW = WorkingHours{
 		0,
 		0,
 		false),
-}
-
-func init() {
-	PacketB8RespOperatingHoursRegisterCallback(func(p PacketB8RespOperatingHours) { WorkingHoursMainPump.decode(p) })
-	PacketB8RespOperatingHoursRegisterCallback(func(p PacketB8RespOperatingHours) { WorkingHoursCompressorForHeating.decode(p) })
-	PacketB8RespOperatingHoursRegisterCallback(func(p PacketB8RespOperatingHours) { WorkingHoursCompressorForCooling.decode(p) })
-	PacketB8RespOperatingHoursRegisterCallback(func(p PacketB8RespOperatingHours) { WorkingHoursCompressorForDHW.decode(p) })
-	PacketB8RespOperatingHoursGasRegisterCallback(func(p PacketB8RespOperatingHoursGas) { WorkingHoursBoilerForHeating.decode(p) })
-	PacketB8RespOperatingHoursGasRegisterCallback(func(p PacketB8RespOperatingHoursGas) { WorkingHoursBoilerForDHW.decode(p) })
-	PacketB8RespOperatingHoursGasRegisterCallback(func(p PacketB8RespOperatingHoursGas) { CounterNumberOfBoilerStarts.decode(p) })
-	PacketB8RespOperatingHoursCompressorRegisterCallback(func(p PacketB8RespOperatingHoursCompressor) { CounterNumberOfCompressorStarts.decode(p) })
-	PacketB8RespOperatingHoursHeaterRegisterCallback(func(p PacketB8RespOperatingHoursHeater) { WorkingHoursBackupHeater1ForHeating.decode(p) })
-	PacketB8RespOperatingHoursHeaterRegisterCallback(func(p PacketB8RespOperatingHoursHeater) { WorkingHoursBackupHeater1ForDHW.decode(p) })
-	PacketB8RespOperatingHoursHeaterRegisterCallback(func(p PacketB8RespOperatingHoursHeater) { WorkingHoursBackupHeater2ForHeating.decode(p) })
-	PacketB8RespOperatingHoursHeaterRegisterCallback(func(p PacketB8RespOperatingHoursHeater) { WorkingHoursBackupHeater2ForDHW.decode(p) })
 }

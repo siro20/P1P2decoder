@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"reflect"
 )
 
 type f8p8 int16
@@ -46,6 +47,17 @@ const (
 	ExternalController1 = 0xF1
 )
 
+type decoder struct {
+	RequestResponse           uint8
+	Address                   uint8
+	Type                      uint8
+	Index                     uint8
+	FirstByteOfPayloadIsIndex bool
+	Callback                  []func(interface{}) error
+	Value                     interface{}
+	Order                     binary.ByteOrder
+}
+
 type Packet interface {
 	Crc() bool
 }
@@ -69,10 +81,207 @@ func (p Packet10Req) Crc() bool {
 	return true
 }
 
-var packet10ReqCB []func(p Packet10Req) = []func(p Packet10Req){}
-
-func Packet10ReqRegisterCallback(f func(p Packet10Req)) {
-	packet10ReqCB = append(packet10ReqCB, f)
+var decoders []decoder = []decoder{
+	{
+		Request,
+		Heatpump,
+		0x10,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet10Req{},
+		binary.BigEndian,
+	},
+	{
+		Request,
+		Heatpump,
+		0x11,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet11Req{},
+		binary.BigEndian,
+	},
+	{
+		Request,
+		Heatpump,
+		0x12,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet12Req{},
+		binary.BigEndian,
+	},
+	{
+		Request,
+		Heatpump,
+		0x14,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet14Req{},
+		binary.BigEndian,
+	},
+	{
+		Request,
+		ExternalController0,
+		0x31,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF031Req{},
+		binary.BigEndian,
+	},
+	{
+		Request,
+		ExternalController0,
+		0x35,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF035Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController1,
+		0x31,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF031Req{},
+		binary.BigEndian,
+	},
+	{
+		Request,
+		ExternalController1,
+		0x35,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF035Req{},
+		binary.LittleEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0x10,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet10Resp{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0x11,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet11Resp{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0x12,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet12Resp{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0x13,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet13Resp{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0x14,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet14Resp{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0x16,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&Packet16Resp{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0xb8,
+		0,
+		true,
+		[]func(interface{}) error{},
+		&PacketB8RespEnergyConsumed{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0xb8,
+		1,
+		true,
+		[]func(interface{}) error{},
+		&PacketB8RespEnergyProduced{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0xb8,
+		2,
+		true,
+		[]func(interface{}) error{},
+		&PacketB8RespOperatingHours{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0xb8,
+		3,
+		true,
+		[]func(interface{}) error{},
+		&PacketB8RespOperatingHoursHeater{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0xb8,
+		4,
+		true,
+		[]func(interface{}) error{},
+		&PacketB8RespOperatingHoursCompressor{},
+		binary.BigEndian,
+	},
+	{
+		Response,
+		Heatpump,
+		0xb8,
+		5,
+		true,
+		[]func(interface{}) error{},
+		&PacketB8RespOperatingHoursGas{},
+		binary.BigEndian,
+	},
 }
 
 type Packet10Resp struct {
@@ -92,12 +301,6 @@ func (p Packet10Resp) Crc() bool {
 	return true
 }
 
-var packet10RespCB []func(p Packet10Resp) = []func(p Packet10Resp){}
-
-func Packet10RespRegisterCallback(f func(p Packet10Resp)) {
-	packet10RespCB = append(packet10RespCB, f)
-}
-
 type Packet11Req struct {
 	ActualRoomtemperature f8p8
 	Reserved              [6]uint8
@@ -105,12 +308,6 @@ type Packet11Req struct {
 
 func (p Packet11Req) Crc() bool {
 	return true
-}
-
-var packet11ReqCB []func(p Packet11Req) = []func(p Packet11Req){}
-
-func Packet11ReqRegisterCallback(f func(p Packet11Req)) {
-	packet11ReqCB = append(packet11ReqCB, f)
 }
 
 type Packet11Resp struct {
@@ -127,12 +324,6 @@ type Packet11Resp struct {
 
 func (p Packet11Resp) Crc() bool {
 	return true
-}
-
-var packet11RespCB []func(p Packet11Resp) = []func(p Packet11Resp){}
-
-func Packet11RespRegisterCallback(f func(p Packet11Resp)) {
-	packet11RespCB = append(packet11RespCB, f)
 }
 
 type Packet12Req struct {
@@ -153,12 +344,6 @@ func (p Packet12Req) Crc() bool {
 	return true
 }
 
-var packet12ReqCB []func(p Packet12Req) = []func(p Packet12Req){}
-
-func Packet12ReqRegisterCallback(f func(p Packet12Req)) {
-	packet12ReqCB = append(packet12ReqCB, f)
-}
-
 type Packet12Resp struct {
 	Reserved  [12]uint8
 	State     uint8
@@ -167,12 +352,6 @@ type Packet12Resp struct {
 
 func (p Packet12Resp) Crc() bool {
 	return true
-}
-
-var packet12RespCB []func(p Packet12Resp) = []func(p Packet12Resp){}
-
-func Packet12RespRegisterCallback(f func(p Packet12Resp)) {
-	packet12RespCB = append(packet12RespCB, f)
 }
 
 type Packet13Resp struct {
@@ -191,12 +370,6 @@ func (p Packet13Resp) Crc() bool {
 	return true
 }
 
-var packet13RespCB []func(p Packet13Resp) = []func(p Packet13Resp){}
-
-func Packet13RespRegisterCallback(f func(p Packet13Resp)) {
-	packet13RespCB = append(packet13RespCB, f)
-}
-
 type Packet14Req struct {
 	Reserved  [8]uint8
 	DeltaT    sabs4
@@ -206,12 +379,6 @@ type Packet14Req struct {
 
 func (p Packet14Req) Crc() bool {
 	return true
-}
-
-var packet14ReqCB []func(p Packet14Req) = []func(p Packet14Req){}
-
-func Packet14ReqRegisterCallback(f func(p Packet14Req)) {
-	packet14ReqCB = append(packet14ReqCB, f)
 }
 
 type Packet14Resp struct {
@@ -224,12 +391,6 @@ func (p Packet14Resp) Crc() bool {
 	return true
 }
 
-var packet14RespCB []func(p Packet14Resp) = []func(p Packet14Resp){}
-
-func Packet14RespRegisterCallback(f func(p Packet14Resp)) {
-	packet14RespCB = append(packet14RespCB, f)
-}
-
 type Packet16Resp struct {
 	UptimeInMinutes uint16 // Counter increasing every minute
 	Reserved        [7]uint8
@@ -237,12 +398,6 @@ type Packet16Resp struct {
 
 func (p Packet16Resp) Crc() bool {
 	return true
-}
-
-var packet16RespCB []func(p Packet16Resp) = []func(p Packet16Resp){}
-
-func Packet16RespRegisterCallback(f func(p Packet16Resp)) {
-	packet16RespCB = append(packet16RespCB, f)
 }
 
 // auxiliary controller ID, date, time
@@ -261,12 +416,6 @@ func (p PacketF031Req) Crc() bool {
 	return true
 }
 
-var packetF031ReqCB []func(p PacketF031Req) = []func(p PacketF031Req){}
-
-func PacketF031ReqRegisterCallback(f func(p PacketF031Req)) {
-	packetF031ReqCB = append(packetF031ReqCB, f)
-}
-
 type Parameter8B struct {
 	Offset uint16
 	Value  uint8
@@ -279,12 +428,6 @@ type PacketF035Req struct {
 
 func (p PacketF035Req) Crc() bool {
 	return true
-}
-
-var packetF035ReqCB []func(p PacketF035Req) = []func(p PacketF035Req){}
-
-func PacketF035ReqRegisterCallback(f func(p PacketF035Req)) {
-	packetF035ReqCB = append(packetF035ReqCB, f)
 }
 
 type PacketB8RespEnergyConsumed struct {
@@ -300,12 +443,6 @@ func (p PacketB8RespEnergyConsumed) Crc() bool {
 	return true
 }
 
-var packetB8RespEnergyConsumed []func(p PacketB8RespEnergyConsumed) = []func(p PacketB8RespEnergyConsumed){}
-
-func PacketB8RespEnergyConsumedRegisterCallback(f func(p PacketB8RespEnergyConsumed)) {
-	packetB8RespEnergyConsumed = append(packetB8RespEnergyConsumed, f)
-}
-
 type PacketB8RespEnergyProduced struct {
 	ForHeating uint24
 	ForCooling uint24
@@ -317,12 +454,6 @@ func (p PacketB8RespEnergyProduced) Crc() bool {
 	return true
 }
 
-var packetB8RespEnergyProduced []func(p PacketB8RespEnergyProduced) = []func(p PacketB8RespEnergyProduced){}
-
-func PacketB8RespEnergyProducedRegisterCallback(f func(p PacketB8RespEnergyProduced)) {
-	packetB8RespEnergyProduced = append(packetB8RespEnergyProduced, f)
-}
-
 type PacketB8RespOperatingHours struct {
 	Pump                 uint24
 	CompressorForHeating uint24
@@ -332,12 +463,6 @@ type PacketB8RespOperatingHours struct {
 
 func (p PacketB8RespOperatingHours) Crc() bool {
 	return true
-}
-
-var packetB8RespOperatingHours []func(p PacketB8RespOperatingHours) = []func(p PacketB8RespOperatingHours){}
-
-func PacketB8RespOperatingHoursRegisterCallback(f func(p PacketB8RespOperatingHours)) {
-	packetB8RespOperatingHours = append(packetB8RespOperatingHours, f)
 }
 
 type PacketB8RespOperatingHoursHeater struct {
@@ -352,12 +477,6 @@ func (p PacketB8RespOperatingHoursHeater) Crc() bool {
 	return true
 }
 
-var packetB8RespOperatingHoursHeater []func(p PacketB8RespOperatingHoursHeater) = []func(p PacketB8RespOperatingHoursHeater){}
-
-func PacketB8RespOperatingHoursHeaterRegisterCallback(f func(p PacketB8RespOperatingHoursHeater)) {
-	packetB8RespOperatingHoursHeater = append(packetB8RespOperatingHoursHeater, f)
-}
-
 type PacketB8RespOperatingHoursCompressor struct {
 	Reserved                 [9]uint8
 	NumberOfCompressorStarts uint24
@@ -365,12 +484,6 @@ type PacketB8RespOperatingHoursCompressor struct {
 
 func (p PacketB8RespOperatingHoursCompressor) Crc() bool {
 	return true
-}
-
-var packetB8RespOperatingHoursCompressor []func(p PacketB8RespOperatingHoursCompressor) = []func(p PacketB8RespOperatingHoursCompressor){}
-
-func PacketB8RespOperatingHoursCompressorRegisterCallback(f func(p PacketB8RespOperatingHoursCompressor)) {
-	packetB8RespOperatingHoursCompressor = append(packetB8RespOperatingHoursCompressor, f)
 }
 
 type PacketB8RespOperatingHoursGas struct {
@@ -384,12 +497,6 @@ type PacketB8RespOperatingHoursGas struct {
 
 func (p PacketB8RespOperatingHoursGas) Crc() bool {
 	return true
-}
-
-var packetB8RespOperatingHoursGas []func(p PacketB8RespOperatingHoursGas) = []func(p PacketB8RespOperatingHoursGas){}
-
-func PacketB8RespOperatingHoursGasRegisterCallback(f func(p PacketB8RespOperatingHoursGas)) {
-	packetB8RespOperatingHoursGas = append(packetB8RespOperatingHoursGas, f)
 }
 
 func calcCRC(b []byte) (crc byte, err error) {
@@ -414,7 +521,7 @@ func calcCRC(b []byte) (crc byte, err error) {
 	return
 }
 
-func decode(b []byte) (pkt interface{}, err error) {
+func Decode(b []byte) (pkt interface{}, err error) {
 	var hdr Header
 	var crc byte
 
@@ -424,261 +531,79 @@ func decode(b []byte) (pkt interface{}, err error) {
 		return
 	}
 
-	// Decode package
-	if hdr.RequestResponse == Response {
-		if hdr.SlaveAddress == Heatpump {
-			if hdr.Type == 0x10 {
-				var p10r Packet10Resp
-				if err = binary.Read(r, binary.BigEndian, &p10r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p10r
-			} else if hdr.Type == 0x11 {
-				var p11r Packet11Resp
-				if err = binary.Read(r, binary.BigEndian, &p11r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p11r
-			} else if hdr.Type == 0x12 {
-				var p12r Packet12Resp
-				if err = binary.Read(r, binary.BigEndian, &p12r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p12r
-			} else if hdr.Type == 0x13 {
-				var p13r Packet13Resp
-				if err = binary.Read(r, binary.BigEndian, &p13r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p13r
-			} else if hdr.Type == 0x14 {
-				var p14r Packet14Resp
-				if err = binary.Read(r, binary.BigEndian, &p14r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p14r
-			} else if hdr.Type == 0x16 {
-				var p16r Packet16Resp
-				if err = binary.Read(r, binary.BigEndian, &p16r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p16r
-			} else if hdr.Type == 0xb8 {
-				var DataType uint8
-				var Consumed PacketB8RespEnergyConsumed
-				var Produced PacketB8RespEnergyProduced
-				var OperatingHours PacketB8RespOperatingHours
-				var OperatingHoursHeater PacketB8RespOperatingHoursHeater
-				var OperatingHoursCompressor PacketB8RespOperatingHoursCompressor
-				var OperatingHoursGas PacketB8RespOperatingHoursGas
-
-				if err = binary.Read(r, binary.BigEndian, &DataType); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				switch DataType {
-				case 0:
-					if err = binary.Read(r, binary.BigEndian, &Consumed); err != nil {
-						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-						return
-					}
-					pkt = Consumed
-				case 1:
-					if err = binary.Read(r, binary.BigEndian, &Produced); err != nil {
-						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-						return
-					}
-					pkt = Produced
-				case 2:
-					if err = binary.Read(r, binary.BigEndian, &OperatingHours); err != nil {
-						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-						return
-					}
-					pkt = OperatingHours
-				case 3:
-					if err = binary.Read(r, binary.BigEndian, &OperatingHoursHeater); err != nil {
-						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-						return
-					}
-					pkt = OperatingHoursHeater
-				case 4:
-					if err = binary.Read(r, binary.BigEndian, &OperatingHoursCompressor); err != nil {
-						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-						return
-					}
-					pkt = OperatingHoursCompressor
-				case 5:
-					if err = binary.Read(r, binary.BigEndian, &OperatingHoursGas); err != nil {
-						err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-						return
-					}
-					pkt = OperatingHoursGas
-				}
+	for _, d := range decoders {
+		if d.Address != hdr.SlaveAddress {
+			continue
+		}
+		if d.RequestResponse != hdr.RequestResponse {
+			continue
+		}
+		if d.Type != hdr.Type {
+			continue
+		}
+		if d.FirstByteOfPayloadIsIndex {
+			var Index uint8
+			if err = binary.Read(r, binary.LittleEndian, &Index); err != nil {
+				err = fmt.Errorf("Error reading index: %v\n", err.Error())
+				continue
+			}
+			if Index != d.Index {
+				// reset reader
+				r.UnreadByte()
+				continue
 			}
 		}
-	} else if hdr.RequestResponse == Request {
-		if hdr.SlaveAddress == Heatpump {
-			if hdr.Type == 0x10 {
-				var p10r Packet10Req
-				if err = binary.Read(r, binary.BigEndian, &p10r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p10r
-			} else if hdr.Type == 0x11 {
-				var p11r Packet11Req
-				if err = binary.Read(r, binary.BigEndian, &p11r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p11r
-			} else if hdr.Type == 0x12 {
-				var p12r Packet12Req
-				if err = binary.Read(r, binary.BigEndian, &p12r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p12r
-			} else if hdr.Type == 0x14 {
-				var p14r Packet14Req
-				if err = binary.Read(r, binary.BigEndian, &p14r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p14r
+
+		// Read data
+		if err = binary.Read(r, d.Order, d.Value); err != nil {
+			continue
+		}
+		pkt = d.Value
+
+		// Check CRC last
+		if iface, ok := pkt.(Packet); ok && iface.Crc() {
+			// Calculate CRC
+			crc, err = calcCRC(b)
+			if err != nil {
+				return
 			}
-		} else if hdr.SlaveAddress == ExternalController0 || hdr.SlaveAddress == ExternalController1 {
-			if hdr.Type == 0x31 {
-				var p31r PacketF031Req
-				if err = binary.Read(r, binary.BigEndian, &p31r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p31r
-			} else if hdr.Type == 0x35 {
-				var p35r PacketF035Req
-				if err = binary.Read(r, binary.LittleEndian, &p35r); err != nil {
-					err = fmt.Errorf("Error reading packet payload: %v\n", err.Error())
-					return
-				}
-				pkt = p35r
+
+			// Read last byte of packet
+			var crcByte byte
+			if err = binary.Read(r, binary.BigEndian, &crcByte); err != nil {
+				err = fmt.Errorf("Error reading crc: %v\n", err.Error())
+				return
+			}
+			if crcByte != crc {
+				err = fmt.Errorf("CRC of packet doesn't match: %02x != %02x", crcByte, crc)
+				return
 			}
 		}
+		for _, cb := range d.Callback {
+			err = cb(d.Value)
+			if err != nil {
+				fmt.Printf("Callback for packet %s failed with: %v\n", reflect.TypeOf(d.Value), err)
+				err = nil
+			}
+		}
+		return pkt, nil
 	}
-
-	if pkt == nil {
-		return nil, fmt.Errorf("unsupported message")
+	if err == nil {
+		err = fmt.Errorf("Paket not supported")
 	}
-
-	// Check CRC last
-	if iface, ok := pkt.(Packet); ok && iface.Crc() {
-		// Calculate CRC
-		crc, err = calcCRC(b)
-		if err != nil {
-			return
-		}
-
-		// Read last byte of packet
-		var b byte
-		if err = binary.Read(r, binary.BigEndian, &b); err != nil {
-			err = fmt.Errorf("Error reading crc: %v\n", err.Error())
-			return
-		}
-		if b != crc {
-			err = fmt.Errorf("CRC of packet doesn't match: %02x != %02x", b, crc)
-			return
-		}
-	}
-	return pkt, nil
-}
-
-func callbacks(pkt interface{}) {
-	if p, ok := pkt.(Packet10Req); ok {
-		for _, cb := range packet10ReqCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet10Resp); ok {
-		for _, cb := range packet10RespCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet11Req); ok {
-		for _, cb := range packet11ReqCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet11Resp); ok {
-		for _, cb := range packet11RespCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet12Req); ok {
-		for _, cb := range packet12ReqCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet12Resp); ok {
-		for _, cb := range packet12RespCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet13Resp); ok {
-		for _, cb := range packet13RespCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet14Resp); ok {
-		for _, cb := range packet14RespCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet14Req); ok {
-		for _, cb := range packet14ReqCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(Packet16Resp); ok {
-		for _, cb := range packet16RespCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketF031Req); ok {
-		for _, cb := range packetF031ReqCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketF035Req); ok {
-		for _, cb := range packetF035ReqCB {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketB8RespEnergyConsumed); ok {
-		for _, cb := range packetB8RespEnergyConsumed {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketB8RespEnergyProduced); ok {
-		for _, cb := range packetB8RespEnergyProduced {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketB8RespOperatingHours); ok {
-		for _, cb := range packetB8RespOperatingHours {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketB8RespOperatingHoursHeater); ok {
-		for _, cb := range packetB8RespOperatingHoursHeater {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketB8RespOperatingHoursCompressor); ok {
-		for _, cb := range packetB8RespOperatingHoursCompressor {
-			cb(p)
-		}
-	} else if p, ok := pkt.(PacketB8RespOperatingHoursGas); ok {
-		for _, cb := range packetB8RespOperatingHoursGas {
-			cb(p)
-		}
-	}
-}
-
-func Decode(b []byte) (pkt interface{}, err error) {
-	pkt, err = decode(b)
-	if err != nil {
-		return
-	}
-	callbacks(pkt)
 	return
+}
+
+func RegisterPacketCallback(value interface{}, cb func(p interface{}) error) error {
+	found := false
+	for i := range decoders {
+		if reflect.TypeOf(decoders[i].Value) == reflect.TypeOf(value) {
+			decoders[i].Callback = append(decoders[i].Callback, cb)
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf("Unsupported packet type: %s", reflect.TypeOf(value))
+	}
+	return nil
 }

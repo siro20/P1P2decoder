@@ -6,7 +6,7 @@ import (
 )
 
 type DateTime struct {
-	GenericSensor
+	*GenericSensor
 }
 
 var SystemTime = DateTime{
@@ -16,8 +16,9 @@ var SystemTime = DateTime{
 		"System time without daylight saving time",
 		"mdi:clock",
 		time.Unix(0, 0),
+		&PacketF031Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(PacketF031Req); ok {
+			if p, ok := pkt.(*PacketF031Req); ok {
 				rfc3339 := fmt.Sprintf("20%02d-%02d-%02dT%02d:%02d:%02dZ", p.DateYear,
 					p.DateMonth, p.DateDayOfMonth, p.TimeHours, p.TimeMinutes, p.TimeSeconds)
 				return time.Parse(time.RFC3339, rfc3339)
@@ -37,8 +38,9 @@ var UITime = DateTime{
 		"Time shown in UI",
 		"mdi:clock",
 		time.Unix(0, 0),
+		&Packet12Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(Packet12Req); ok {
+			if p, ok := pkt.(*Packet12Req); ok {
 				rfc3339 := fmt.Sprintf("20%02d-%02d-%02dT%02d:%02d:00Z", p.DateYear,
 					p.DateMonth, p.DateDayOfMonth, p.TimeHours, p.TimeMinutes)
 				return time.Parse(time.RFC3339, rfc3339)
@@ -49,13 +51,4 @@ var UITime = DateTime{
 		0,
 		0,
 		false),
-}
-
-func init() {
-	Packet12ReqRegisterCallback(func(p Packet12Req) {
-		_ = UITime.decode(p)
-	})
-	PacketF031ReqRegisterCallback(func(p PacketF031Req) {
-		_ = SystemTime.decode(p)
-	})
 }
