@@ -58,29 +58,6 @@ type decoder struct {
 	Order                     binary.ByteOrder
 }
 
-type Packet interface {
-	Crc() bool
-}
-
-// Packet10Req doesn't change on state
-type Packet10Req struct {
-	Heating                  uint8
-	OperationMode            uint8
-	DHWTank                  uint8
-	Reserved                 [4]uint8
-	TargetRoomTemperature    uint8
-	Reserved1                uint8
-	Flags                    uint8
-	QuietMode                uint8
-	Reserved2                [6]uint8
-	DWHTankMode              uint8
-	DHWTankTargetTemperature f8p8
-}
-
-func (p Packet10Req) Crc() bool {
-	return true
-}
-
 var decoders []decoder = []decoder{
 	{
 		Request,
@@ -284,6 +261,21 @@ var decoders []decoder = []decoder{
 	},
 }
 
+// Packet10Req doesn't change on state
+type Packet10Req struct {
+	Heating                  uint8
+	OperationMode            uint8
+	DHWTank                  uint8
+	Reserved                 [4]uint8
+	TargetRoomTemperature    uint8
+	Reserved1                uint8
+	Flags                    uint8
+	QuietMode                uint8
+	Reserved2                [6]uint8
+	DWHTankMode              uint8
+	DHWTankTargetTemperature f8p8
+}
+
 type Packet10Resp struct {
 	Heating                  uint8
 	Reserved                 uint8
@@ -297,17 +289,9 @@ type Packet10Resp struct {
 	DHWActive                uint8
 }
 
-func (p Packet10Resp) Crc() bool {
-	return true
-}
-
 type Packet11Req struct {
 	ActualRoomtemperature f8p8
 	Reserved              [6]uint8
-}
-
-func (p Packet11Req) Crc() bool {
-	return true
 }
 
 type Packet11Resp struct {
@@ -320,10 +304,6 @@ type Packet11Resp struct {
 	ActualRoomtemperature     f8p8
 	ExternalTemperatureSensor f8p8
 	Reserved                  [4]uint8
-}
-
-func (p Packet11Resp) Crc() bool {
-	return true
 }
 
 type Packet12Req struct {
@@ -340,18 +320,10 @@ type Packet12Req struct {
 	Reserved2        uint8
 }
 
-func (p Packet12Req) Crc() bool {
-	return true
-}
-
 type Packet12Resp struct {
 	Reserved  [12]uint8
 	State     uint8
 	Reserved1 [7]uint8
-}
-
-func (p Packet12Resp) Crc() bool {
-	return true
 }
 
 type Packet13Resp struct {
@@ -366,19 +338,11 @@ type Packet13Resp struct {
 	Reserved3                [2]uint8
 }
 
-func (p Packet13Resp) Crc() bool {
-	return true
-}
-
 type Packet14Req struct {
 	Reserved  [8]uint8
 	DeltaT    sabs4
 	EcoMode   uint8
 	Reserved2 [5]uint8
-}
-
-func (p Packet14Req) Crc() bool {
-	return true
 }
 
 type Packet14Resp struct {
@@ -387,17 +351,9 @@ type Packet14Resp struct {
 	AddZoneargetTemperature   f8p8
 }
 
-func (p Packet14Resp) Crc() bool {
-	return true
-}
-
 type Packet16Resp struct {
 	UptimeInMinutes uint16 // Counter increasing every minute
 	Reserved        [7]uint8
-}
-
-func (p Packet16Resp) Crc() bool {
-	return true
 }
 
 // auxiliary controller ID, date, time
@@ -412,10 +368,6 @@ type PacketF031Req struct {
 	TimeSeconds    uint8
 }
 
-func (p PacketF031Req) Crc() bool {
-	return true
-}
-
 type Parameter8B struct {
 	Offset uint16
 	Value  uint8
@@ -424,10 +376,6 @@ type Parameter8B struct {
 // 8bit parameter exchange
 type PacketF035Req struct {
 	Parameters [6]Parameter8B
-}
-
-func (p PacketF035Req) Crc() bool {
-	return true
 }
 
 type PacketB8RespEnergyConsumed struct {
@@ -439,10 +387,6 @@ type PacketB8RespEnergyConsumed struct {
 	Total                  uint24
 }
 
-func (p PacketB8RespEnergyConsumed) Crc() bool {
-	return true
-}
-
 type PacketB8RespEnergyProduced struct {
 	ForHeating uint24
 	ForCooling uint24
@@ -450,19 +394,11 @@ type PacketB8RespEnergyProduced struct {
 	Total      uint24
 }
 
-func (p PacketB8RespEnergyProduced) Crc() bool {
-	return true
-}
-
 type PacketB8RespOperatingHours struct {
 	Pump                 uint24
 	CompressorForHeating uint24
 	CompressorForCooling uint24
 	CompressorForDHW     uint24
-}
-
-func (p PacketB8RespOperatingHours) Crc() bool {
-	return true
 }
 
 type PacketB8RespOperatingHoursHeater struct {
@@ -473,17 +409,9 @@ type PacketB8RespOperatingHoursHeater struct {
 	Reserved                [6]uint8
 }
 
-func (p PacketB8RespOperatingHoursHeater) Crc() bool {
-	return true
-}
-
 type PacketB8RespOperatingHoursCompressor struct {
 	Reserved                 [9]uint8
 	NumberOfCompressorStarts uint24
-}
-
-func (p PacketB8RespOperatingHoursCompressor) Crc() bool {
-	return true
 }
 
 type PacketB8RespOperatingHoursGas struct {
@@ -493,10 +421,6 @@ type PacketB8RespOperatingHoursGas struct {
 	GasUsageForDHW       uint24
 	NumberOfBoilerStarts uint24
 	GasUsageTotal        uint24
-}
-
-func (p PacketB8RespOperatingHoursGas) Crc() bool {
-	return true
 }
 
 func calcCRC(b []byte) (crc byte, err error) {
@@ -524,6 +448,7 @@ func calcCRC(b []byte) (crc byte, err error) {
 func Decode(b []byte) (pkt interface{}, err error) {
 	var hdr Header
 	var crc byte
+	var crcByte byte
 
 	r := bytes.NewReader(b)
 	if err = binary.Read(r, binary.LittleEndian, &hdr); err != nil {
@@ -560,25 +485,22 @@ func Decode(b []byte) (pkt interface{}, err error) {
 		}
 		pkt = d.Value
 
-		// Check CRC last
-		if iface, ok := pkt.(Packet); ok && iface.Crc() {
-			// Calculate CRC
-			crc, err = calcCRC(b)
-			if err != nil {
-				return
-			}
-
-			// Read last byte of packet
-			var crcByte byte
-			if err = binary.Read(r, binary.BigEndian, &crcByte); err != nil {
-				err = fmt.Errorf("Error reading crc: %v\n", err.Error())
-				return
-			}
-			if crcByte != crc {
-				err = fmt.Errorf("CRC of packet doesn't match: %02x != %02x", crcByte, crc)
-				return
-			}
+		// Calculate CRC
+		crc, err = calcCRC(b)
+		if err != nil {
+			return
 		}
+
+		// Read last byte of packet
+		if err = binary.Read(r, binary.BigEndian, &crcByte); err != nil {
+			err = fmt.Errorf("Error reading crc: %v\n", err.Error())
+			return
+		}
+		if crcByte != crc {
+			err = fmt.Errorf("CRC of packet doesn't match: %02x != %02x", crcByte, crc)
+			return
+		}
+
 		for _, cb := range d.Callback {
 			err = cb(d.Value)
 			if err != nil {
