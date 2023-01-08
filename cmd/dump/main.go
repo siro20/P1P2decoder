@@ -66,6 +66,10 @@ func main() {
 			continue
 		}
 
+		err = p1p2.VerifyCRC(buf)
+		if err != nil {
+			fmt.Printf("CRC doesn't match in packet '%s'\n", s)
+		}
 		packet = s
 		newPacket = true
 		_, err = p1p2.Decode(buf)

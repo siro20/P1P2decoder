@@ -445,6 +445,17 @@ func calcCRC(b []byte) (crc byte, err error) {
 	return
 }
 
+func VerifyCRC(b []byte) (err error) {
+	var crc byte
+	if crc, err = calcCRC(b); err != nil {
+		return
+	}
+	if crc != b[len(b)-1] {
+		err = fmt.Errorf("CRC doesn't match")
+	}
+	return
+}
+
 func Decode(b []byte) (pkt interface{}, err error) {
 	var hdr Header
 	var crc byte
