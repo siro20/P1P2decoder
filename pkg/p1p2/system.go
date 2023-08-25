@@ -144,4 +144,5 @@ var Sensors = []Sensor{
 	&WorkingHoursBackupHeater2ForHeating,
 	&SystemTime,
 	&UITime,
+	&StateExternalController,
 }

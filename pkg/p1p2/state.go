@@ -293,6 +293,26 @@ var StateCompressor = State{
 		false),
 }
 
+var StateExternalController = State{
+	GenericSensor: newGenericSensor("StateExternalController",
+		"state",
+		"",
+		"",
+		"mdi:cpu-32-bit",
+		uint(0),
+		&PacketF031Req{},
+		func(pkt interface{}) (interface{}, error) {
+			if p, ok := pkt.(*PacketF031Req); ok {
+				return uint(p.Status[0]) | uint(p.Status[1])<<8 | uint(p.Status[2])<<16, nil
+			}
+
+			return 0, fmt.Errorf("Wrong message")
+		},
+		0,
+		0,
+		false),
+}
+
 var PumpMain = State{
 	GenericSensor: newGenericSensor("Main",
 		"pump",
@@ -319,11 +339,10 @@ var PumpDHWCirculation = State{
 		"",
 		"mdi:water-pump",
 		false,
-		&Packet10Resp{},
+		&Packet10Req{},
 		func(pkt interface{}) (interface{}, error) {
-			if p, ok := pkt.(*Packet10Resp); ok {
-				// FIXME
-				return p.PumpAndCompressorStatus&0x01 > 0, nil
+			if p, ok := pkt.(*Packet10Req); ok {
+				return p.DHWCirculation&0x20 > 0, nil
 			}
 			return false, fmt.Errorf("Wrong message")
 		},

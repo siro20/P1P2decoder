@@ -121,6 +121,46 @@ var decoders []decoder = []decoder{
 	},
 	{
 		Request,
+		ExternalController0,
+		0x36,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF036Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController0,
+		0x38,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF038Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController0,
+		0x39,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF039Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController0,
+		0x3b,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF03bReq{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
 		ExternalController1,
 		0x31,
 		0,
@@ -137,6 +177,46 @@ var decoders []decoder = []decoder{
 		false,
 		[]func(interface{}) error{},
 		&PacketF035Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController1,
+		0x36,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF036Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController1,
+		0x38,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF038Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController1,
+		0x39,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF039Req{},
+		binary.LittleEndian,
+	},
+	{
+		Request,
+		ExternalController1,
+		0x3b,
+		0,
+		false,
+		[]func(interface{}) error{},
+		&PacketF03bReq{},
 		binary.LittleEndian,
 	},
 	{
@@ -271,7 +351,8 @@ type Packet10Req struct {
 	Reserved1                uint8
 	Flags                    uint8
 	QuietMode                uint8
-	Reserved2                [6]uint8
+	DHWCirculation           uint8 // 0x20 == on
+	Reserved2                [5]uint8
 	DWHTankMode              uint8
 	DHWTankTargetTemperature f8p8
 }
@@ -376,6 +457,36 @@ type Parameter8B struct {
 // 8bit parameter exchange
 type PacketF035Req struct {
 	Parameters [6]Parameter8B
+}
+
+type Parameter16B struct {
+	Offset uint16
+	Value  uint16
+}
+
+// 16bit parameter exchange
+type PacketF036Req struct {
+	Parameters [5]Parameter16B
+}
+
+// 16bit parameter exchange
+type PacketF03bReq struct {
+	Parameters [5]Parameter16B
+}
+
+type Parameter32B struct {
+	Offset uint16
+	Value  uint32
+}
+
+// 32bit parameter exchange
+type PacketF038Req struct {
+	Parameters [3]Parameter32B
+}
+
+// 32bit parameter exchange
+type PacketF039Req struct {
+	Parameters [3]Parameter32B
 }
 
 type PacketB8RespEnergyConsumed struct {
